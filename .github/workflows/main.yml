@@ -1,0 +1,57 @@
+name: Deploy Metamp Application to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main  # Adjust this to your main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'  # Match this to your project's Node.js version
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build project
+      run: npm run build
+
+    - name: Transfer build files to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        source: "dist/*"
+        target: "/var/www/metamp"
+
+    - name: Transfer Nginx configuration to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        source: "mpvis-frontend"
+        target: "/etc/nginx/sites-available"
+
+    - name: Link Nginx configuration and Restart Nginx
+      uses: appleboy/ssh-action@v0.1.3
+      with: 
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          sudo apt-get update && sudo apt-get install nginx -y
+          rm /etc/nginx/sites-enabled/default
+          sudo ln -sf /etc/nginx/sites-available/mpvis-frontend /etc/nginx/sites-enabled/
+          sudo nginx -t && sudo systemctl restart nginx

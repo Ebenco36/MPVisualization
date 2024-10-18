@@ -1,0 +1,58 @@
+/* Icons */
+
+.-icon,
+.svg-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  margin: 0;
+  cursor: pointer;
+
+  &.arrow {
+    width: 16px;
+    height: 13px;
+  }
+
+  i {
+    width: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    height: 100%;
+    display: block;
+    stroke: inherit;
+  }
+
+  svg {
+    stroke: inherit;
+  }
+
+  // transition: $transition;
+}
+
+.with-icon {
+  position: relative;
+  .-icon {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+}
+.eye-slash-icon {
+  background-image: url('@/assets/svg/eye-slash.svg');
+}
+.eye-icon {
+  background-image: url('@/assets/svg/eye.svg');
+  color: inherit;
+}
+.book-icon {
+  background-image: url('@/assets/svg/book.svg');
+  color: inherit;
+}
+.summary-icon {
+  background-image: url('@/assets/svg/summary.svg');
+  color: inherit;
+}

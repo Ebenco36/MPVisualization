@@ -1,0 +1,9 @@
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        root /var/www/metamp/dist; # Path to your Vue.js dist folder
+        try_files $uri $uri/ /index.html;
+    }
+}

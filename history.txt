@@ -1,0 +1,7 @@
+docker build -t mpvisualization .
+
+docker tag mpvisualization:latest ebenco36/mpvis_frontend:latest
+
+docker push ebenco36/mpvis_frontend:latest
+
+python3 -m http.server 8000

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:300,400,400i,600,700,800,900" rel="stylesheet" />
+    <link href="/src/assets/css/lite-purple.css" rel="stylesheet" />
+    <link href="src/assets/css/perfect-scrollbar.css" rel="stylesheet" />
+    <title>MP Visualization</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <script src="src/assets/js/perfect-scrollbar.min.js"></script>
+    <script lang="javascript">
+      $(".perfect-scrollbar, [data-perfect-scrollbar]").each(function (index) {
+        var $el = $(this);
+        var ps = new PerfectScrollbar(this, {
+          suppressScrollX: $el.data("suppress-scroll-x"),
+          suppressScrollY: $el.data("suppress-scroll-y")
+        });
+      }); // Full screen
+    </script>
+  </body>
+</html>

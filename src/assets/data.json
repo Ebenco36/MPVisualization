@@ -1,0 +1,45 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "text": "What do you see from this chart. What can be done better",
+      "category_id": 1,
+      "created_at": "2023-12-26",
+      "updated_at": "2023-12-26",
+      "options": [
+        { "id": 1, "text": "Sure", "is_correct": true, "question_id": 1 },
+        { "id": 2, "text": "Not Sure", "is_correct": true, "question_id": 1 },
+        { "id": 3, "text": "Not yet", "is_correct": true, "question_id": 1 }
+      ]
+    },
+    {
+      "id": 2,
+      "text": "What do you see from this chart. What can be done better",
+      "category_id": 1,
+      "created_at": "2023-12-26",
+      "updated_at": "2023-12-26",
+      "options": []
+    },
+    {
+      "id": 3,
+      "text": "What do you see from this chart. What can be done better",
+      "category_id": 1,
+      "created_at": "2023-12-26",
+      "updated_at": "2023-12-26",
+      "options": []
+    },
+    {
+      "id": 4,
+      "text": "What do you see from this chart. What can be done better",
+      "category_id": 1,
+      "created_at": "2023-12-26",
+      "updated_at": "2023-12-26",
+      "options": []
+    }
+  ],
+  "id": 1,
+  "name": "Introduction:",
+  "description": "Display a simple flowchart with 'Data In' and 'Predictions Out.'",
+  "created_at": "2023-12-25T23:53:12.376639",
+  "updated_at": "2023-12-25T23:53:12.376645"
+}

@@ -1,0 +1,5 @@
+{
+    "name": "MetaMP",
+    "dockerFile": "Dockerfile",
+    "forwardPorts": [8080]
+}
