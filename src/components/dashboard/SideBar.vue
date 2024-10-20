@@ -28,13 +28,13 @@
           <div class="triangle"></div>
         </li>
         <li class="nav-item" data-item="mpvis_use_cases_discrepancies" id="mpvis_use_cases_discrepancies">
-          <router-link class="nav-item-hold" to="/use-cases/discrepancies" @click="menu_switch?.toggleMenu()"
+          <router-link class="nav-item-hold" to="/use-cases/discrepancies" @click="handleClick()"
             ><i class="nav-icon i-Suitcase"></i> <span class="nav-text">Data Discrepancy</span>
           </router-link>
           <div class="triangle"></div>  
         </li>
         <li class="nav-item" data-item="mpvis_use_cases_outlier_detection" id="mpvis_use_cases_outlier_detection">
-          <router-link class="nav-item-hold" to="/use-cases/outlier_detection" @click="menu_switch?.toggleMenu()"
+          <router-link class="nav-item-hold" to="/use-cases/outlier_detection" @click="handleClick()"
             ><i class="nav-icon i-Suitcase"></i> <span class="nav-text">Outlier Detection</span>
           </router-link>
           <div class="triangle"></div>
@@ -110,7 +110,11 @@ import { useTemplateStore } from '@/stores/template_switch'
 
 const menu_switch = useTemplateStore()
 
-
+function handleClick() {
+    this.menu_switch.toggleMenu();
+    // Reload the page
+    window.location.reload();
+  }
 
 function loadDynamicPath(path = '/evaluation') {
     const host = window.location.origin;

@@ -42,7 +42,7 @@
                             <div class="ul-widget1">
                                 <div class="ul-widget4__item ul-widget4__users">
                                     <div class="ul-widget4__img"><img id="userDropdown"
-                                            src="../dist-assets/images/faces/1.jpg" alt="alt" data-toggle="dropdown"
+                                            src="#" alt="alt" data-toggle="dropdown"
                                             aria-haspopup="true" aria-expanded="false" /></div>
                                     <div class="ul-widget2__info ul-widget4__users-info"><a class="ul-widget2__title"
                                             href="#">
@@ -53,7 +53,7 @@
                                 </div>
                                 <div class="ul-widget4__item ul-widget4__users">
                                     <div class="ul-widget4__img"><img id="userDropdown"
-                                            src="../dist-assets/images/faces/2.jpg" alt="alt" data-toggle="dropdown"
+                                            src="#" alt="alt" data-toggle="dropdown"
                                             aria-haspopup="true" aria-expanded="false" /></div>
                                     <div class="ul-widget2__info ul-widget4__users-info"><a class="ul-widget2__title"
                                             href="#">
@@ -64,7 +64,7 @@
                                 </div>
                                 <div class="ul-widget4__item ul-widget4__users">
                                     <div class="ul-widget4__img"><img id="userDropdown"
-                                            src="../dist-assets/images/faces/3.jpg" alt="alt" data-toggle="dropdown"
+                                            src="#" alt="alt" data-toggle="dropdown"
                                             aria-haspopup="true" aria-expanded="false" /></div>
                                     <div class="ul-widget2__info ul-widget4__users-info"><a class="ul-widget2__title"
                                             href="#">
@@ -75,7 +75,7 @@
                                 </div>
                                 <div class="ul-widget4__item ul-widget4__users">
                                     <div class="ul-widget4__img"><img id="userDropdown"
-                                            src="../dist-assets/images/faces/4.jpg" alt="alt" data-toggle="dropdown"
+                                            src="#" alt="alt" data-toggle="dropdown"
                                             aria-haspopup="true" aria-expanded="false" /></div>
                                     <div class="ul-widget2__info ul-widget4__users-info"><a class="ul-widget2__title"
                                             href="#">
