@@ -22,7 +22,7 @@ setTimeout(() => {
   watchEffect(async () => {
     if (trend.value) {
       let clonedObject = { ...trend.value };
-      title.value = clonedObject.title
+      // title.value = clonedObject.title
       // if (clonedObject.layer){
       //   title.value = clonedObject.layer[0].title
       // } else {
