@@ -23,11 +23,11 @@ setTimeout(() => {
     if (trend.value) {
       let clonedObject = { ...trend.value };
       title.value = clonedObject.title
-      if (clonedObject.layer){
-        title.value = clonedObject.layer[0].title
-      } else {
-        title.value = clonedObject.title
-      }
+      // if (clonedObject.layer){
+      //   title.value = clonedObject.layer[0].title
+      // } else {
+      //   title.value = clonedObject.title
+      // }
 
       if (trend.value) {
         if (trend.value.layer){
