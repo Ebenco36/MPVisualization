@@ -43,7 +43,7 @@ const router = useRouter();
 const dataList = ref([])
 
 function handleGoto(id) {
-  router.push(`/summary/${id.name}`)
+  router.push(`/summary/${id.value}`)
 }
 
 function fetchGraphSummaries() {
