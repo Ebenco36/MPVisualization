@@ -39,15 +39,22 @@
           </router-link>
           <div class="triangle"></div>
         </li>
-        <li class="nav-item" data-item="databaseTable" id="mpvis_database">
+        <li class="nav-item disabled nav-item" data-item="databaseTable" id="mpvis_database">
           <router-link class="nav-item-hold" to="/databaseTable" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Big-Data"></i><span class="nav-text">Database</span>
           </router-link>
           <div class="triangle"></div>
         </li>
-        <li class="nav-item" data-item="exploration" id="mpvis_evaluation">
-          <router-link class="nav-item-hold" to="/exploration" @click="menu_switch?.toggleMenu()"
-            ><i class="nav-icon i-Internet-Explorer"></i><span class="nav-text">Exploration</span>
+        <li 
+          class="nav-item disabled" 
+          data-item="exploration" 
+          id="mpvis_evaluation">
+          <router-link 
+            class="nav-item-hold" 
+            to="/exploration" 
+            @click.prevent="menu_switch?.toggleMenu()">
+            <i class="nav-icon i-Internet-Explorer"></i>
+            <span class="nav-text">Exploration</span>
           </router-link>
           <div class="triangle"></div>
         </li>
@@ -65,12 +72,12 @@
           </router-link>
           <div class="triangle"></div>
         </li> -->
-         <li class="nav-item" data-item="machine-learning-prediction" id="mpvis_machine-learning-prediction">
+         <!-- <li class="nav-item" data-item="machine-learning-prediction" id="mpvis_machine-learning-prediction">
           <router-link class="nav-item-hold" to="/machine-learning-prediction" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Cloud-Computer"></i> <span class="nav-text">MPs Grouping</span>
           </router-link>
           <div class="triangle"></div>
-        </li>
+        </li> -->
         <!-- <li class="nav-item" data-item="mpvis_use_cases" id="mpvis_use_cases">
           <router-link class="nav-item-hold" to="/use-cases" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Suitcase"></i> <span class="nav-text">Use Cases</span>
@@ -113,7 +120,10 @@ const menu_switch = useTemplateStore()
 function handleClick() {
     this.menu_switch.toggleMenu();
     // Reload the page
-    window.location.reload();
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 2000 milliseconds = 2 seconds
+
   }
 
 function loadDynamicPath(path = '/evaluation') {
@@ -127,4 +137,10 @@ function loadDynamicPath(path = '/evaluation') {
 .navigation-left{
   overflow: auto;
 }
+.nav-item.disabled {
+  pointer-events: none; /* Disable all mouse events */
+  opacity: 0.5; /* Greyed out appearance */
+  cursor: not-allowed; /* Change the cursor to indicate it's disabled */
+}
+
 </style>
