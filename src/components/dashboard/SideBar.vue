@@ -1,7 +1,7 @@
 <template>
   <div class="side-content-wrap">
     <div
-      :class="[menu_switch.menu_switch.menu ? 'open' : 'close', 'sidebar-left rtl-ps-none']"
+      :class="[(menu_switch?.menu_switch?.menu) ? 'open' : 'close', 'sidebar-left rtl-ps-none']"
       data-perfect-scrollbar=""
       data-suppress-scroll-x="true"
     >
@@ -118,7 +118,12 @@ import { useTemplateStore } from '@/stores/template_switch'
 const menu_switch = useTemplateStore()
 
 function handleClick() {
-    this.menu_switch.toggleMenu();
+    if (this.menu_switch && typeof this.menu_switch.toggleMenu === 'function') {
+        this.menu_switch.toggleMenu(); // Safely call toggleMenu
+    } else {
+        console.warn('menu_switch or toggleMenu is not defined.');
+    }
+    console.log(this.menu_switch.toggleMenu())
     // Reload the page
     setTimeout(() => {
       window.location.reload();
