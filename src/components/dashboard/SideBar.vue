@@ -118,12 +118,11 @@ import { useTemplateStore } from '@/stores/template_switch'
 const menu_switch = useTemplateStore()
 
 function handleClick() {
-    if (this.menu_switch && typeof this.menu_switch.toggleMenu === 'function') {
-        this.menu_switch.toggleMenu(); // Safely call toggleMenu
+    if (menu_switch && typeof menu_switch.toggleMenu === 'function') {
+        menu_switch.toggleMenu(); // Safely call toggleMenu
     } else {
         console.warn('menu_switch or toggleMenu is not defined.');
     }
-    console.log(this.menu_switch.toggleMenu())
     // Reload the page
     setTimeout(() => {
       window.location.reload();
