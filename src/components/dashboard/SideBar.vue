@@ -39,14 +39,14 @@
           </router-link>
           <div class="triangle"></div>
         </li>
-        <li class="nav-item disabled nav-item" data-item="databaseTable" id="mpvis_database">
+        <li class="nav-item nav-item" data-item="databaseTable" id="mpvis_database">
           <router-link class="nav-item-hold" to="/databaseTable" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Big-Data"></i><span class="nav-text">Database</span>
           </router-link>
           <div class="triangle"></div>
         </li>
         <li 
-          class="nav-item disabled" 
+          class="nav-item" 
           data-item="exploration" 
           id="mpvis_evaluation">
           <router-link 
@@ -66,28 +66,21 @@
           <div class="triangle"></div>
         </li>
         
-        <!-- <li class="nav-item" data-item="sunburst" id="mpvis_sunburst">
+        <li class="nav-item" data-item="sunburst" id="mpvis_sunburst">
           <router-link class="nav-item-hold" to="/sunburst" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Pie-Chart-3"></i> <span class="nav-text">Other Charts</span>
           </router-link>
           <div class="triangle"></div>
-        </li> -->
-         <!-- <li class="nav-item" data-item="machine-learning-prediction" id="mpvis_machine-learning-prediction">
+        </li>
+         <li class="nav-item" data-item="machine-learning-prediction" id="mpvis_machine-learning-prediction">
           <router-link class="nav-item-hold" to="/machine-learning-prediction" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Cloud-Computer"></i> <span class="nav-text">MPs Grouping</span>
           </router-link>
           <div class="triangle"></div>
-        </li> -->
+        </li>
         <!-- <li class="nav-item" data-item="mpvis_use_cases" id="mpvis_use_cases">
           <router-link class="nav-item-hold" to="/use-cases" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Suitcase"></i> <span class="nav-text">Use Cases</span>
-          </router-link>
-          <div class="triangle"></div>
-        </li> -->
-
-        <!-- <li class="nav-item" data-item="about" id="mpvis_about">
-          <router-link class="nav-item-hold" to="/about" @click="menu_switch?.toggleMenu()"
-            ><i class="nav-icon i-Computer-Secure"></i> <span class="nav-text">About Us</span>
           </router-link>
           <div class="triangle"></div>
         </li> -->

@@ -16,7 +16,7 @@
             <div class="row p-2">
                 <div class="banner-text pb-10" style="text-align: center; width:100%">
                     <h1>MetaMP</h1>
-                    <!-- <vue3-select v-model="selected" :options="suggestions" @search="fetchSuggestions"
+                    <vue3-select v-model="selected" :options="suggestions" @search="fetchSuggestions"
                         @update:modelValue="handleSelection" placeholder="Search using protein code or name" :filterable="false"
                         label="label">
                     </vue3-select>
@@ -27,7 +27,7 @@
                         <span class="muted-text" href="#">
                             Prostaglandin H2 synthase-1 (cyclooxygenase-1 or COX-1)
                         </span>
-                    </span> -->
+                    </span>
                 </div>
 
 
