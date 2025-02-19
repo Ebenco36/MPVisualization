@@ -28,13 +28,13 @@
           <div class="triangle"></div>
         </li>
         <li class="nav-item" data-item="mpvis_use_cases_discrepancies" id="mpvis_use_cases_discrepancies">
-          <router-link class="nav-item-hold" to="/use-cases/discrepancies" @click="handleClick()"
+          <router-link class="nav-item-hold" to="/use-cases/discrepancies" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Suitcase"></i> <span class="nav-text">Data Discrepancy</span>
           </router-link>
           <div class="triangle"></div>  
         </li>
         <li class="nav-item" data-item="mpvis_use_cases_outlier_detection" id="mpvis_use_cases_outlier_detection">
-          <router-link class="nav-item-hold" to="/use-cases/outlier_detection" @click="handleClick()"
+          <router-link class="nav-item-hold" to="/use-cases/outlier_detection" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Suitcase"></i> <span class="nav-text">Outlier Detection</span>
           </router-link>
           <div class="triangle"></div>
@@ -110,18 +110,13 @@ import { useTemplateStore } from '@/stores/template_switch'
 
 const menu_switch = useTemplateStore()
 
-function handleClick() {
-    if (menu_switch && typeof menu_switch.toggleMenu === 'function') {
-        menu_switch.toggleMenu(); // Safely call toggleMenu
-    } else {
-        console.warn('menu_switch or toggleMenu is not defined.');
-    }
-    // Reload the page
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000); // 2000 milliseconds = 2 seconds
-
-  }
+// function handleClick() {
+//     if (menu_switch && typeof menu_switch.toggleMenu === 'function') {
+//         menu_switch.toggleMenu(); // Safely call toggleMenu
+//     } else {
+//         console.warn('menu_switch or toggleMenu is not defined.');
+//     }
+//   }
 
 function loadDynamicPath(path = '/evaluation') {
     const host = window.location.origin;

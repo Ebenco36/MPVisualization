@@ -74,7 +74,7 @@ onMounted(() => {
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
             <div class="dropdown-header"><i class="i-Lock-User mr-1"></i> {{ user.name }}</div>
             <a class="dropdown-item" @click="handleProfile">Profile</a>
-            <!-- <span class="dropdown-item" @click="handleLogout">Sign out</span> -->
+            <span class="dropdown-item" @click="handleLogout">Sign out</span>
           </div>
         </div>
       </div>

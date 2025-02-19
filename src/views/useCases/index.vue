@@ -23,7 +23,7 @@ const chart_trend = ref(null)
 const outlier_detection_by_method = ref(null)
 const outlier_detection_algorithm = ref(null)
 const errors = ref([])
-const view = ref(null)
+const view = ref(router.currentRoute.value.params?.view)
 const page_title = ref("")
 
 function handleFilter() {
@@ -37,6 +37,10 @@ function convertToTitleCase(str) {
 
 const fetchCharts = debounce(async () => {
   try {
+    if ((features.value).length == 1) {
+      alert("You must select more than one variable or leave it empty.")
+      return 
+    }
     const data = {
       use_case: useCases.value,
       category: category.value,
@@ -87,6 +91,26 @@ watch(useCases, (new_use_cases) => {
   }
 }, { deep: true })
 
+watch(
+  () => router.currentRoute.value.params?.view,
+  (newView) => {
+    view.value = newView;
+    page_title.value = "summary_statistics" + " view"
+    if (view.value != "" && view.value != "summary_statistics") {
+      useCases.value = view.value
+      page_title.value = view.value + " view"
+    } else {
+      useCases.value = "summary_statistics"
+      category.value = "group"
+      chart_type.value = "bar"
+      chart_trend.value = "No"
+    }
+    page_title.value = formatString(page_title.value)
+    fetchCharts()
+    console.log('View updated to:', newView);
+  }
+);
+
 onMounted(() => {
     casesStore.loadUseCases()
     
@@ -102,9 +126,7 @@ onMounted(() => {
     onUnmounted(() => {
         window.removeEventListener('resize', updateWidth)
     })
-
     page_title.value = "summary_statistics" + " view"
-    view.value = router.currentRoute.value.params?.view;
     if (view.value != "" && view.value != "summary_statistics") {
       useCases.value = view.value
       page_title.value = view.value + " view"

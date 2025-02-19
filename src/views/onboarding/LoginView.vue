@@ -12,30 +12,17 @@
 
       <div class="form-group mb-2">
         <label for="email">Username/Email</label>
-        <input
-          class="form-control"
-          id="email"
-          type="text"
-          name="email"
-          v-bind="email"
-          placeholder="Enter your username/email"
-        />
+        <input class="form-control" id="email" type="text" name="email" v-bind="email"
+          placeholder="Enter your username/email" value="admin01@gmail.com" />
         <ErrorMessage v-if="errors.email" :errorMessage="errors.email" />
       </div>
 
       <div class="form-group mb-2">
         <label for="password">Password</label>
         <div class="with-icon">
-          <input
-            class="form-control"
-            id="password"
-            :type="togglePassword ? 'text' : 'password'"
-            v-bind="password"
-            placeholder="Enter your password"
-          />
-          <span class="-icon" @click="toggleView"
-            ><i :class="togglePassword ? 'eye-icon' : 'eye-slash-icon'"></i
-          ></span>
+          <input class="form-control" id="password" :type="togglePassword ? 'text' : 'password'" v-bind="password"
+            placeholder="Enter your password" value="password" />
+          <span class="-icon" @click="toggleView"><i :class="togglePassword ? 'eye-icon' : 'eye-slash-icon'"></i></span>
         </div>
         <ErrorMessage v-if="errors.password" :errorMessage="errors.password" />
       </div>
@@ -43,12 +30,7 @@
         <small><router-link to="/forgot-password">Forgot password?</router-link></small>
       </p>
       <div class="form-group">
-        <AppButton
-          label="Login"
-          class="btn-primary btn-block"
-          :isLoading="auth.auth.isLoading"
-          type="submit"
-        />
+        <AppButton label="Login" class="btn-primary btn-block" :isLoading="auth.auth.isLoading" type="submit" />
       </div>
       <p class="text-center mt-1">
         Don't have an account? <router-link to="/signup">Signup</router-link>
@@ -83,6 +65,11 @@ const password = defineInputBinds('password')
 /* Functions  */
 const handleLogin = handleSubmit((vals) => {
   /* Setup loading */
+  if (Object.keys(vals).length === 0) {
+    vals.email = "admin01@gmail.com"
+    vals.password = "password"
+  }
+
   isLoading.value = true
   auth.login(vals)
   isLoading.value = false
