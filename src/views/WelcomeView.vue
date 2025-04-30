@@ -27,13 +27,16 @@
                         <span class="muted-text" href="#">
                             Prostaglandin H2 synthase-1 (cyclooxygenase-1 or COX-1)
                         </span>
+                        <span class="muted-text" href="#">
+                            Disease: Parkinson disease, Ovarian cancer
+                        </span>
                     </span>
                 </div>
 
 
                 <div class="banner-text ">
 
-                    <p>
+                    <div>
                         <strong>MetaMP</strong>
                         is a web application that integrates data from the MPstruc, PDB, OPM, 
                         and UniProt databases to enhance enrichment and interoperability among 
@@ -49,7 +52,7 @@
                         determination methods and related features for resolved membrane 
                         protein structures, enriching this data with comprehensive metadata 
                         by combining information from these four databases.
-                    </p>
+                    </div> 
                 </div>
 
                 <strong style="font-size: 13pt;"><strong>Last database update: </strong>  2024-03-01T12:11:00</strong>
@@ -66,7 +69,7 @@
             <div class="mb-30 col-md-4 col-lg-4">
                 <div class="card">
                     <h3 class="card-title">Database Summary</h3>
-                    <p class="card-text">
+                    <div class="card-text">
                     <ul class="list-group list-group-flush font-weight-bold">
                         <li class="list-group-item">Reports of membrane protein structures in database: {{
                             numeral(welcomeStore?.welcome_data?.data?.all_data?.total_rows).format('0,0') }}</li>
@@ -81,10 +84,10 @@
                         </li>
 
                     </ul>
-                    </p>
+                </div>
                 </div>
             </div>
-
+            
             <div class="mb-30 col-md-8 col-lg-8">
                 <GraphViewWithoutCard id="group_chart" label="Unique proteins in database"
                     :summary="welcomeStore?.welcome_data?.data?.unique_trend" />
@@ -96,7 +99,7 @@
             <div class="mb-30 col-md-6 col-lg-4">
                 <div class="card">
                     <h3 class="card-title">Quick Links</h3>
-                    <p class="card-text mb-0">
+                    <div class="card-text mb-0">
 
                     <ul class="list-group list-group-flush font-weight-bold">
                         <li class="list-group-item btn-link" @click="gotoDashboard()">Overview</li>
@@ -109,8 +112,8 @@
                         <li class="list-group-item btn-link" @click="gotoContact()">Contact Us</li>
                         <li class="list-group-item btn-link" @click="gotoAboutMetaMP()">About MetaMP</li>
                         <!-- <li class="list-group-item"></li> -->
-                    </ul>
-                    </p>
+                    </ul> 
+                </div>
                 </div>
             </div>
 
@@ -217,7 +220,7 @@ const fetchSuggestions = async (searchTerm) => {
         // Add a 'label' field combining pdb_code and name
         suggestions.value = response.data?.data?.items.map(item => ({
             ...item,
-            label: `${item.pdb_code} - ${item.name} - ${item.comment_disease_name} (Uniprot Id: ${item.uniprot_id})`  // Concatenate pdb_code and name
+            label: `${item.pdb_code} - ${item.name} - ${item.comment_disease_name} (Uniprot Id: ${item.uniprot_id}, Disease: ${item.comment_disease_name})`  // Concatenate pdb_code and name
         })) || [];
         console.log(suggestions.value)
     } catch (error) {
@@ -229,7 +232,8 @@ const fetchSuggestions = async (searchTerm) => {
 // Handle selection and log selected item
 const handleSelection = (selectedItem) => {
     // router.push(`/details/${item.pdb_code}`)
-    window.open(`/#/details/${selectedItem.pdb_code}`, '_blank');
+    // window.open(`/#/details/${selectedItem.pdb_code}`, '_blank');
+    router.push({ path: '/details-2', query: { code: selectedItem.pdb_code, type: 'pdb' } });
 };
 
 function gotoDashboard() {

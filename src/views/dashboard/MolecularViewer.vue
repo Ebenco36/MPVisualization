@@ -17,32 +17,6 @@ const symmetry = ref('None')
 const content = ref({})
 
 const options = ref([
-    /*
-    {
-        name: "Assembly",
-        value: "__AU",
-        options: [
-            { name: "Asymmetric Unit", value: "__AU" },
-            { name: "Bioassembly 1", value: "BU1" },
-            { name: "Unitcell", value: "UNITCELL" },
-            { name: "Supercell", value: "SUPERCELL" }
-        ]
-    },
-    {
-        name: "Model",
-        value: 0,
-        options: [
-            { name: "Model 1", value: 0 },
-        ]
-    },
-    {
-        name: "Symmetry",
-        value: -1,
-        options: [
-            { name: "None", value: -1 },
-        ]
-    },
-    */
     {
         name: "Style",
         value: "cartoon",
@@ -60,19 +34,10 @@ const options = ref([
         options: [
             { name: "By Spectrum", value: "spectrum" },
             { name: "By Chain", value: "chain" },
-            /*
-            { name: "By Element", value: "element" },
-            { name: "By Residue", value: "resname" },
-            { name: "By Molecule Type", value: "moleculetype" },
-            { name: "By B-factor", value: "bfactor" },
-            { name: "By Secondary Structure", value: "sstruc" },
-            { name: "By Hydrophobicity", value: "hydrophobicity" },
-            { name: "By Density Fit", value: "densityfit" },
-            { name: "By Geometry Quality", value: "geoquality" },
-            */
+            
         ]
     },
-    /*
+    
     {
         name: "Ligand",
         value: "ballandstick",
@@ -92,7 +57,7 @@ const options = ref([
             { name: "High", value: "high" },
         ]
     },
-    */
+    
 ])
 
 const toggleFilter = ref(true)
@@ -110,7 +75,7 @@ async function initializeViewer() {
             cols: 2,
             control_all: true  //mouse controls all viewers
         },
-        { width: 800, height: 600, defaultcolors: mol3D.elementColors.rasmol,});
+        { width: 1200, height: 600, defaultcolors: mol3D.elementColors.rasmol,});
     } catch (error) {
     console.error('Error loading 3Dmol library:', error);
     }
@@ -252,7 +217,7 @@ onMounted(() => {
             <div class="card mb-4">
               <div class="card-body p-0" style="overflow-y: auto;">
                 <h5 class="card-title m-0 p-3">Protein Structure</h5>
-                <div ref="display" style="width: 800px; height: 600px;" ></div>
+                <div ref="display"  style="text-align: center; width: 90%; height: 500px; margin: 0 auto;" ></div>
               </div>
             </div>
           </div>

@@ -72,16 +72,6 @@ const options = ref([
         options: [
             { name: "By Spectrum", value: "spectrum" },
             { name: "By Chain", value: "chain" },
-            /*
-            { name: "By Element", value: "element" },
-            { name: "By Residue", value: "resname" },
-            { name: "By Molecule Type", value: "moleculetype" },
-            { name: "By B-factor", value: "bfactor" },
-            { name: "By Secondary Structure", value: "sstruc" },
-            { name: "By Hydrophobicity", value: "hydrophobicity" },
-            { name: "By Density Fit", value: "densityfit" },
-            { name: "By Geometry Quality", value: "geoquality" },
-            */
         ]
     },
 ])
@@ -99,9 +89,8 @@ async function initializeViewer() {
         "display", {
             rows: 2,
             cols: 2,
-            control_all: true  //mouse controls all viewers
+            control_all: true
         },
-       // { width: 400, height: 150, defaultcolors: mol3D.elementColors.rasmol,}
        );
     
     } catch (error) {
@@ -279,14 +268,14 @@ onMounted(() => {
                     </p>
                     <p><strong>Group:</strong>&nbsp; {{ details?.group }}</p>
                     <p><strong>Sub-Group:</strong>&nbsp; {{ details?.subgroup }}</p>
-                    <p><strong>Specie:</strong>&nbsp; {{ details?.species }}</p>
+                    <p><strong>Species:</strong>&nbsp; {{ details?.species }}</p>
                     <p><strong>Taxonomic Domain:</strong>&nbsp; {{ details?.taxonomic_domain }}</p>
-                    <p><strong>Expressed in Specie:</strong>&nbsp; {{ details?.expressed_in_species }}</p>
+                    <p><strong>Expressed in Species:</strong>&nbsp; {{ details?.expressed_in_species }}</p>
 
                     <p><strong>Membrane Name:</strong>&nbsp; {{ details?.membrane_name }}</p>
                     <p><strong>Family:</strong>&nbsp; {{ details?.family_name }}</p>
                     <p><strong>Super Family:</strong>&nbsp; {{ details?.family_superfamily_name }}</p>
-                    <p><strong>Specie Description:</strong>&nbsp; {{ process_specie_description(details?.species_description) }}</p>
+                    <p><strong>Species Description:</strong>&nbsp; {{ process_specie_description(details?.species_description) }}</p>
                     <p><strong>Membrane Topology In:</strong>&nbsp; {{ details?.membrane_topology_in }}</p>
                     <p><strong>Membrane Topology Out:</strong>&nbsp; {{ details?.membrane_topology_out }}</p>
                     <p><strong>Polymer Composition:</strong>&nbsp; {{ details?.rcsentinfo_polymer_composition }}</p>

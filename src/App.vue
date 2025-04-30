@@ -31,7 +31,7 @@ export default {
   <component :is="layout" />
 </template>
 <style lang="scss">
-@import '@/assets/scss/main.scss';
+@use '@/assets/scss/main.scss';
 
 .app-footer {
   bottom: 0;

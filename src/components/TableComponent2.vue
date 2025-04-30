@@ -208,7 +208,8 @@
         viewItem(item) {
             console.log(item.pdb_code)
             // router.push(`/details/${item.pdb_code}`)
-            window.open(`/#/details/${item.pdb_code}`, '_blank');
+            // window.open(`/#/details/${item.pdb_code}`, '_blank');
+            this.$router.push({ path: '/details-2', query: { code: item.pdb_code, type: 'pdb' } });
 
         },
         transformValues(values) {

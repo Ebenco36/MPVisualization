@@ -21,6 +21,11 @@ import ToastPlugin from 'vue-toast-notification'
 import 'vue-multiselect/dist/vue-multiselect.css'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+// Import PDBe-Mol*’s “light” stylesheet
+import 'pdbe-molstar/build/pdbe-molstar-light.css'
+// Import the plugin UMD bundle so that it registers `window.PDBeMolstarPlugin`
+import 'pdbe-molstar/build/pdbe-molstar-plugin.js'
+
 
 // other importations
 /*

@@ -199,6 +199,14 @@ const ROUTES = [
     }
   },
   {
+    path: '/details-2',
+    component: () => import('../views/details2.vue'),
+    meta: {
+      layout: "DashboardLayout",
+      requiresAuth: true
+    }
+  },
+  {
     path: '/test-viewer',
     component: () => import('../views/dashboard/TestView.vue'),
     meta: {
