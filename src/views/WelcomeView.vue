@@ -66,7 +66,7 @@
 
     <div class="container">
         <div class="row">
-            <div class="mb-30 col-md-4 col-lg-4">
+            <!-- <div class="mb-30 col-md-4 col-lg-4">
                 <div class="card">
                     <h3 class="card-title">Database Summary</h3>
                     <div class="card-text">
@@ -86,16 +86,7 @@
                     </ul>
                 </div>
                 </div>
-            </div>
-            
-            <div class="mb-30 col-md-8 col-lg-8">
-                <GraphViewWithoutCard id="group_chart" label="Unique proteins in database"
-                    :summary="welcomeStore?.welcome_data?.data?.unique_trend" />
-            </div>
-            <div class="mb-30 col-md-8 col-lg-8">
-                <GraphViewWithoutCard id="method_chart" label="Reports of membrane protein structures in database"
-                    :summary="welcomeStore?.welcome_data?.data?.method_chart" />
-            </div>
+            </div> -->
             <div class="mb-30 col-md-6 col-lg-4">
                 <div class="card">
                     <h3 class="card-title">Quick Links</h3>
@@ -106,6 +97,7 @@
                         <li class="list-group-item btn-link" @click="gotoSummary()">Summary Statistics</li>
                         <li class="list-group-item btn-link" @click="gotoDataDiscrepancy()">Data Discrepancy</li>
                         <li class="list-group-item btn-link" @click="gotoOutlier()">Outlier Detection</li>
+                        <li class="list-group-item btn-link" @click="gotoDataList()">Database</li>
                         <li class="list-group-item btn-link" @click="gotoSubmission('feature_request')">Feature Request</li>
                         <!-- <li class="list-group-item btn-link" @click="gotoML()">Make Prediction</li> -->
                         <li class="list-group-item btn-link" @click="gotoSubmission('expert_feedback')">Provide Expert Feedback</li>
@@ -116,6 +108,15 @@
                 </div>
                 </div>
             </div>
+            <div class="mb-30 col-md-8 col-lg-8">
+                <GraphViewWithoutCard id="group_chart" label="Unique proteins in database"
+                    :summary="welcomeStore?.welcome_data?.data?.unique_trend" />
+            </div>
+            <!-- <div class="mb-30 col-md-8 col-lg-8">
+                <GraphViewWithoutCard id="method_chart" label="Reports of membrane protein structures in database"
+                    :summary="welcomeStore?.welcome_data?.data?.method_chart" />
+            </div> -->
+            
 
         </div>
     </div>
@@ -242,6 +243,10 @@ function gotoDashboard() {
 
 function gotoSummary() {
     router.push('/summary')
+}
+
+function gotoDataList() {
+    router.push('/databaseTable')
 }
 
 function gotoDataDiscrepancy() {

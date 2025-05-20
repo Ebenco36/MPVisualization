@@ -1,7 +1,7 @@
 <template>
   <div class="container-fluid">
     <HeaderCrumbs
-      :label="'Single view for ' + searchType + ' with accession code: ' + searchQuery"
+      :label="'Single view for ' + searchType.toUpperCase() + ' with accession code: ' + searchQuery"
       title=""
     />
     <div class="row">
@@ -18,10 +18,10 @@
               <label class="form-label">Search Type:</label>
               <select v-model="searchType" class="form-select form-control">
                 <option value="pdb">PDB</option>
-                <option value="opm">OPM</option>
+                <!-- <option value="opm">OPM</option>
                 <option value="swissmodel">Swiss Model</option>
                 <option value="uniprot">UniProt</option>
-                <option value="alphafold">Alphafold</option>
+                <option value="alphafold">Alphafold</option> -->
               </select>
             </div>
             <div>
@@ -121,111 +121,161 @@
         <div ref="viewerContainer" class="molstar-container border rounded shadow-sm"></div>
       </div>
     </div>
-
-    <!-- Viewer Container -->
-    <!-- <div class="row col-lg-10 col-md-10 col-12">
-          <div ref="viewerContainer" class="molstar-container border rounded shadow-sm"></div>
-          <div class="controlBox mt-3">
-            <h4>Set Background</h4>
-            <button @click="setBackgroundColor(255, 255, 255)">White</button>
-            <button @click="setBackgroundColor(0, 0, 0)">Black</button>
-  
-            <h4>Toggle Controls Menu</h4>
-            <button @click="toggleControls(false)">Hide</button>
-            <button @click="toggleControls(true)">Show</button>
-            <button @click="toggleControls()">Toggle</button>
-  
-            <h4>Toggle Fullscreen</h4>
-            <button @click="toggleFullscreen(true)">Show Fullscreen</button>
-  
-            <h4>Visual Methods</h4>
-            <button @click="toggleSpin(true)">Rotate</button>
-            <button @click="toggleSpin(false)">Stop</button>
-            <button @click="toggleSpin()">Toggle</button>
-  
-            <h4>Focus</h4>
-            <button @click="focusOnChain('A', 14, 18)">Focus on Chain A:14-18</button>
-  
-            <h4>Highlight</h4>
-            <button @click="highlightChain('A', 14, 18, { r: 255, g: 255, b: 0 })">
-              Highlight Chain A:14-18
-            </button>
-            <button @click="clearHighlight()">Clear Highlight</button>
-          </div>
-      </div> -->
-
     <!-- Footer Row -->
     <div class="row">
-      <div class="col-md-6 p-1 d-flex">
-        <div class="card p-4 border-radius-none">
-          <h2 class="h2">{{ searchQuery }}</h2>
+      <div class="col-md-6 p-1 d-flex" style="width: 100% !important">
+        <div class="card p-4 border-radius-none" style="width: 100% !important">
+          <!-- <h2 class="h2">{{ searchQuery }}</h2> -->
           <p class="text-sm">
             {{ searchType.toUpperCase() }} Accession:
             <a
-              :href="'https://www.uniprot.org/uniprotkb/' + searchQuery + '/entry'"
+              :href="'https://www.uniprot.org/uniprotkb/' + details?.uniprot_id + '/entry'"
               class="anchor"
               target="_blank"
               rel="noopener"
-              >{{ searchQuery }} <iconify-icon icon="line-md:external-link"></iconify-icon
-            ></a>
+              ><strong class="badge badge-info bouncing-badge">{{ searchQuery }}</strong>
+            </a>
           </p>
           <div class="mt-4 grid grid-cols-2 gap-4">
             <div>
-              <h3 class="h3">Taxonomy</h3>
-              <p class="text-sm">Super Kingdom: {{ details?.taxonomic_domain }}</p>
-              <p class="text-sm">Super Family: {{ details?.family_superfamily_name }}</p>
-              <p class="text-sm">Family: {{ details?.family_name }}</p>
-              <p class="text-sm">Sub-group: {{ details?.subgroup }}</p>
-              <p class="text-sm">Species: {{ details?.species }}</p>
-              <p>
-                Species Description:{{ process_specie_description(details?.species_description) }}
+              <p class="text-sm">
+                <strong>Protein Recommended Name: </strong>&nbsp;
+                {{
+                  details?.protein_recommended_name && details?.protein_recommended_name != 'null'
+                    ? details.protein_recommended_name
+                    : 'Not Specified'
+                }}
+              </p>
+              <p class="text-sm">
+                <strong>Protein Alternative Name: </strong>&nbsp;
+                {{
+                  details?.protein_alternative_name && details?.protein_alternative_name != 'null'
+                    ? details.protein_alternative_name
+                    : 'Not Specified'
+                }}
+              </p>
+
+              <p class="text-sm">
+                <strong>Associated Genes: </strong>&nbsp;
+                {{
+                  details?.associated_genes && details?.associated_genes != 'null'
+                    ? details.associated_genes
+                    : 'Not Specified'
+                }}
               </p>
             </div>
             <div>
-              <h3 class="h3">Sequence</h3>
-              <p class="text-sm">Length: {{ details?.sequence_length }}</p>
-              <p class="text-sm">Mass: {{ details?.sequence_mass }}</p>
-              <p class="text-sm">Sequence: >>>{{ details?.sequence_sequence }}</p>
-            </div>
-          </div>
+              <h3 class="h3"><strong>Taxonomy</strong></h3>
+              <table class="table table-bordered table-sm">
+                <tbody>
+                  <tr>
+                    <th scope="row">Super Kingdom</th>
+                    <td>
+                      {{
+                        details?.taxonomic_domain && details.taxonomic_domain !== 'null'
+                          ? details.taxonomic_domain
+                          : 'Not Specified'
+                      }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Super Family</th>
+                    <td>
+                      {{
+                        details?.family_superfamily_name &&
+                        details.family_superfamily_name !== 'null'
+                          ? details.family_superfamily_name
+                          : 'Not Specified'
+                      }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Family</th>
+                    <td>
+                      {{
+                        details?.family_name && details.family_name !== 'null'
+                          ? details.family_name
+                          : 'Not Specified'
+                      }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Sub-group</th>
+                    <td>
+                      {{
+                        details?.subgroup && details.subgroup !== 'null'
+                          ? details.subgroup
+                          : 'Not Specified'
+                      }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Species</th>
+                    <td>
+                      {{
+                        details?.species && details.species !== 'null'
+                          ? details.species
+                          : 'Not Specified'
+                      }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div>
+                <strong>Hierarchical taxonomic classification: </strong>
+                <!-- {{ process_specie_description(details?.species_description || 'Not Specified') }} -->
+                <!-- <TaxonomyFlow :taxonomy="parseTaxonomy(details?.species_description)" width="100%" height="fit-content"/> -->
 
-
-          <div class="row">
-              <div class="col-md-12">
-                <div class="mt-4 grid grid-cols-2 gap-4">
-                  <div>
-                    <strong>Biological process: </strong>&nbsp; <ExpandableText
-                      :text="details?.biological_process || ''"
-                      :limit="100"
-                    />
-                    <strong>Biological process: </strong>&nbsp; <ExpandableText
-                      :text="details?.cellular_component || ''"
-                      :limit="100"
-                    />
-                    <strong>Biological process: </strong>&nbsp; <ExpandableText
-                      :text="details?.molecular_function || ''"
-                      :limit="100"
-                    />
-                    <!-- <p class="text-sm" v-expandable="{ limit: 50 }">
-                      <strong>Biological process: </strong>&nbsp; {{ details?.biological_process }}
-                    </p> -->
-
-                    <!-- <p class="text-sm">
-                      <strong>Cellular Components: </strong>&nbsp; {{ details?.cellular_component }}
-                    </p>
-
-                    <p class="text-sm">
-                      <strong>Molecular Functions: </strong>&nbsp; {{ details?.molecular_function }}
-                    </p> -->
-                  </div>
+                <div style="overflow-x: auto; white-space: nowrap; max-width: 100%">
+                  <v-treeview
+                    :items="buildTaxonomyPath(parseTaxonomy(details?.organism_lineage))"
+                    item-title="label"
+                    item-children="children"
+                    open-all
+                    activatable
+                    density="comfortable"
+                    max-width="1200"
+                  />
                 </div>
               </div>
             </div>
+            <div>
+              <h3 class="h3"><strong>Sequence</strong></h3>
+              <p class="text-sm">
+                <strong>Length:</strong>
+                {{
+                  details?.sequence_length && details?.sequence_length != 'null'
+                    ? details.sequence_length
+                    : 'Not Specified'
+                }}
+              </p>
+              <p class="text-sm">
+                <strong>Molecular Mass:</strong>
+                {{
+                  details?.sequence_mass && details?.sequence_mass != 'null'
+                    ? details?.sequence_mass +
+                      ' (in Daltons) or ' +
+                      ' (' +
+                      (details?.sequence_mass / 1000).toFixed(1) +
+                      ' in kDa) '
+                    : 'Not Specified'
+                }}
+              </p>
+              <p class="text-sm">
+                <strong>Sequence: >>></strong> &nbsp;
+                <ExpandableText
+                  :text="details?.sequence_sequence || ''"
+                  :limit="500"
+                  mode="chars"
+                />
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="col-md-6 p-1 d-flex">
-        <div class="card p-4 border-radius-none">
-          <h2 class="h3 mb-2">Summary</h2>
+      <div class="col-md-6 p-1 d-flex" style="width: 100% !important">
+        <div class="card p-4 border-radius-none" style="width: 100% !important">
+          <h2 class="h3 mb-2"><strong>Summary</strong></h2>
           <div class="grid grid-cols-2 gap-4">
             <!-- <div class="row">
               <div class="col-md-6 col-6">
@@ -263,7 +313,14 @@
                 <table class="table table-bordered table-striped">
                   <thead>
                     <tr>
-                      <th>Feature</th>
+                      <th>Feature
+                        <span
+                          class="fa fa-info-circle"
+                          tabindex="0"
+                          role="button"
+                          data-bs-toggle="tooltip"
+                        >&#9432;</span>
+                      </th>
                       <th>Count</th>
                     </tr>
                   </thead>
@@ -273,7 +330,14 @@
                         ?.countByFeatureType"
                       :key="index"
                     >
-                      <td>{{ index }}</td>
+                      <td :title="getExplanation(index)">
+                        {{ index }}
+                        <v-tooltip
+                          activator="parent"
+                          location="start"
+                          max-width="300"
+                        >{{getExplanation(index)}}</v-tooltip>
+                      </td>
                       <td>{{ feature }}</td>
                     </tr>
                   </tbody>
@@ -285,7 +349,14 @@
                 <table class="table table-bordered table-striped">
                   <thead>
                     <tr>
-                      <th>Type</th>
+                      <th>Type
+                        <span
+                          class="fa fa-info-circle"
+                          tabindex="0"
+                          role="button"
+                          data-bs-toggle="tooltip"
+                        >&#9432;</span>
+                      </th>
                       <th>Value</th>
                     </tr>
                   </thead>
@@ -295,30 +366,64 @@
                         ?.countByCommentType"
                       :key="index_type"
                     >
-                      <td>{{ capitalize(index_type) }}</td>
+                      <td :title="getExplanation(capitalize(index_type))">
+                        {{ capitalize(index_type) }}
+                        <v-tooltip
+                          activator="parent"
+                          location="start"
+                          max-width="300"
+                        >{{getExplanation(capitalize(index_type))}}</v-tooltip>
+                      </td>
                       <td>{{ feature_type }}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
+            
             <div class="row">
               <div class="col-md-12">
                 <div class="mt-4 grid grid-cols-2 gap-4">
                   <div>
                     <h4 class="h4"><strong>Topology Information</strong></h4>
-                    <p class="text-sm">
-                      <strong>Membrane Topology In:</strong>&nbsp;
-                      {{ details?.membrane_topology_in }}
-                    </p>
-                    <p class="text-sm">
-                      <strong>Membrane Topology Out:</strong>&nbsp;
-                      {{ details?.membrane_topology_out }}
-                    </p>
-                    <p class="text-sm">
-                      <strong>Polymer Composition:</strong>&nbsp;
-                      {{ details?.rcsentinfo_polymer_composition }}
-                    </p>
+
+                    <table class="table table-bordered table-sm">
+                      <tbody>
+                        <tr>
+                          <th scope="row">Membrane Topology In</th>
+                          <td>
+                            {{
+                              details?.membrane_topology_in &&
+                              details.membrane_topology_in !== 'null'
+                                ? details.membrane_topology_in
+                                : 'Not Specified'
+                            }}
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Membrane Topology Out</th>
+                          <td>
+                            {{
+                              details?.membrane_topology_out &&
+                              details.membrane_topology_out !== 'null'
+                                ? details.membrane_topology_out
+                                : 'Not Specified'
+                            }}
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Polymer Composition</th>
+                          <td>
+                            {{
+                              details?.rcsentinfo_polymer_composition &&
+                              details.rcsentinfo_polymer_composition !== 'null'
+                                ? details.rcsentinfo_polymer_composition
+                                : 'Not Specified'
+                            }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -327,56 +432,123 @@
             <div class="row">
               <div class="col-md-12 col-12">
                 <div class="mt-4 grid grid-cols-2 gap-4">
-                  <div v-if="record && Object.keys(record).length > 0" style="border: 2px solid grey; border-radius: 10px; padding: 10px;">
-                    <h4 class="h4">Classification</h4>
+                  <div
+                    v-if="record && Object.keys(record).length > 0"
+                    style="border: 2px solid grey; border-radius: 10px; padding: 10px"
+                  >
+                    <h4 class="h4"><strong>Classification</strong></h4>
                     <p class="text-sm" v-for="(classification, index) in record" :key="index">
-                      <strong>{{index}}:</strong>&nbsp; {{ classification }}
+                      <strong>{{ index }}:</strong>&nbsp; {{ classification }}
                     </p>
-
-                    
+                    <p class="text-sm">
+                      <strong>TM (DeepTMHMM):</strong>&nbsp; {{ details?.DeepTMHMM_tm_count }}
+                    </p>
+                    <p class="text-sm">
+                      <strong>TM (TMbed):</strong>&nbsp; {{ details?.TMbed_tm_count }}
+                    </p>
+                  </div>
+                  <div v-else style="border: 2px solid grey; border-radius: 10px; padding: 10px">
+                    <h4 class="h4"><strong>Classification</strong></h4>
+                    <p class="text-sm">
+                      <strong class="badge badge-info">Data Not Available</strong>
+                    </p>
                   </div>
 
                   <div class="row">
-              <div class="col-md-12">
-                <div class="mt-4 grid grid-cols-2 gap-4">
-                  
-
-                  <div>
-                    <h4 class="h4"><strong>Other Informations</strong></h4>
-                    <p class="text-sm">
-                      <strong>Protein Alternative Name: </strong>&nbsp; {{ details?.protein_alternative_name }}
-                    </p>
-
-                    <p class="text-sm">
-                      <strong>Protein Recommended Name: </strong>&nbsp; {{ details?.protein_recommended_name }}
-                    </p>
-
-                    <p class="text-sm">
-                      <strong>Organism Lineage: </strong>&nbsp; {{ process_specie_description(details?.organism_lineage) }}
-                    </p>
-
-                    <p class="text-sm">
-                      <strong>Associated Genes: </strong>&nbsp; {{ details?.associated_genes }}
-                    </p>
-
-                    <p class="text-sm">
-                      <strong>Annotation Score: </strong>&nbsp; {{ details?.annotation_score }}
-                    </p>
-                    
-                    <h2 class="header"><strong>Related Diseases</strong></h2>
-                    <!-- <p class="text-sm">
-                      <strong>Diseases: </strong>&nbsp; {{ details?.comment_disease }}
+                    <div class="col-md-12">
+                      <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div>
+                          <strong>Biological process: </strong>&nbsp;
+                          <ExpandableText
+                            :text="
+                              details?.biological_process && details?.biological_process != 'null'
+                                ? details.biological_process
+                                : 'Not Specified'
+                            "
+                            :limit="100"
+                          />
+                          <strong>Cellular Components: </strong>&nbsp;
+                          <ExpandableText
+                            :text="
+                              details?.cellular_component && details?.cellular_component != 'null'
+                                ? details.cellular_component
+                                : 'Not Specified'
+                            "
+                            :limit="100"
+                          />
+                          <strong>Molecular Functions: </strong>&nbsp;
+                          <ExpandableText
+                            :text="
+                              details?.molecular_function && details?.molecular_function != 'null'
+                                ? details.molecular_function
+                                : 'Not Specified'
+                            "
+                            :limit="100"
+                          />
+                          <!-- <p class="text-sm" v-expandable="{ limit: 50 }">
+                      <strong>Biological process: </strong>&nbsp; {{ details?.biological_process }}
                     </p> -->
 
-                    <p class="text-sm">
-                      <strong>Disease Name </strong>&nbsp; {{ details?.comment_disease_name }}
+                          <!-- <p class="text-sm">
+                      <strong>Cellular Components: </strong>&nbsp; {{ details?.cellular_component }}
                     </p>
 
-                    
+                    <p class="text-sm">
+                      <strong>Molecular Functions: </strong>&nbsp; {{ details?.molecular_function }}
+                    </p> -->
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
+
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 class="h4"><strong>Other Informations</strong></h4>
+
+                          <!--
+                          <div class="text-sm" style=" border: 1px solid #ddd; overflow: auto; max-width: 100%; max-height: 600px;">
+                            <strong>Organism Lineage: </strong>&nbsp;
+                            
+                            <TaxonomyFlow :taxonomy="parseTaxonomy(details?.organism_lineage)" width="100%" height="fit-content"/> 
+                            <div style="overflow-x: auto; white-space: nowrap; max-width: 100%;">
+                            <v-treeview
+                              :items="buildTaxonomyPath(parseTaxonomy(details?.organism_lineage))"
+                              item-title="label"
+                              item-children="children"
+                              open-all
+                              activatable
+                              density="comfortable"
+                              max-width="1200"
+                            />
+                          </div>
+                        
+                        </div>-->
+
+                          <p class="text-sm">
+                            <strong>Annotation Score: </strong>&nbsp;
+                            {{
+                              details?.annotation_score && details?.annotation_score != 'null'
+                                ? details.annotation_score
+                                : 'Not Specified'
+                            }}
+                          </p>
+
+                          <h2 class="header"><strong>Related Diseases</strong></h2>
+                          <p class="text-sm">
+                            <strong>Disease Name </strong>&nbsp;
+                            {{
+                              details?.comment_disease_name &&
+                              details?.comment_disease_name != 'null'
+                                ? details?.comment_disease_name
+                                : 'Not Specified'
+                            }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -395,12 +567,78 @@ import ExpandableText from '@/components/ExpandableText.vue'
 import 'pdbe-molstar/build/pdbe-molstar-light.css'
 import 'pdbe-molstar/build/pdbe-molstar-plugin.js'
 import { useDashboardStore } from '@/stores/dashboard'
+// import TaxonomyFlow from '@/components/TaxonomyFlow2.vue'
+import { VTreeview } from 'vuetify/labs/VTreeview'
+import { explanations } from '@/utils/explanations'
+
+function buildTaxonomyPath(path) {
+  if (!Array.isArray(path) || path.length === 0) return []
+
+  const [head, ...tail] = path
+  return [
+    {
+      label: head,
+      ...(tail.length ? { children: buildTaxonomyPath(tail) } : {})
+    }
+  ]
+}
+
+const taxonomy = [
+  {
+    label: 'Animalia',
+    children: [
+      {
+        label: 'Chordata',
+        children: [
+          {
+            label: 'Mammalia',
+            children: [
+              {
+                label: 'Eutheria',
+                children: [
+                  {
+                    label: 'Primates',
+                    children: [
+                      {
+                        label: 'Hominidae',
+                        children: [
+                          {
+                            label: 'Homo',
+                            children: [{ label: 'sapiens' }]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    label: 'Carnivora',
+                    children: [
+                      {
+                        label: 'Felidae',
+                        children: [
+                          {
+                            label: 'Panthera',
+                            children: [{ label: 'leo' }]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
 
 const dashboardStore = useDashboardStore()
 const details = ref({})
 
-const record    = ref(null)
-const error     = ref(null)
+const record = ref(null)
+const error = ref(null)
 
 // Viewer container reference
 const viewerContainer = ref(null)
@@ -423,23 +661,32 @@ const opts = reactive({
   symmetryAnnotation: true,
   domainAnnotation: true,
   validationAnnotation: true,
-  plugins: ['membrane-orientation']
+  plugins: ['membrane-orientation'],
+  // defaultPreset: 'membrane-orientation'
 })
 
 // Search state
 const searchType = ref('pdb')
 const searchQuery = ref('')
 
-function process_specie_description(data_string) {
-  return data_string
-    ? data_string.replace(/;\s*/g, ' -> ').replace(/,\s*/g, ' -> ')
-    : data_string;
+function getExplanation(featureName) {
+  return explanations[featureName] || 'No explanation available.'
+}
+
+// function process_specie_description(data_string) {
+//   return data_string ? data_string.replace(/;\s*/g, ' -> ').replace(/,\s*/g, ' -> ') : data_string
+// }
+
+function parseTaxonomy(input = '') {
+  return input
+    ?.split(/[,;]+/) // split on commas or semicolons
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 function parseRawData(raw) {
   // 1) if it isn’t a string, bail out
   if (typeof raw !== 'string') {
-    console.warn('parseRawData: expected a string, got', raw)
     return {}
   }
 
@@ -504,14 +751,32 @@ watch([searchType, searchQuery], () => {
     opts.customData.format = 'cif'
   }
   fetchProteinDetails()
+  fetchRecord()
 })
 
 async function fetchProteinDetails() {
-  dashboardStore?.fetchDetails(searchQuery.value).then(() => {
-    let response = dashboardStore.protein_details.data
-    let correctedJsonString = response.replace(/\bNaN\b/g, 'null')
-    details.value = JSON.parse(correctedJsonString)?.data[0]
-  })
+  try {
+    await dashboardStore?.fetchDetails(searchQuery.value)
+
+    const response = dashboardStore.protein_details.data
+
+    let jsonString
+
+    if (typeof response === 'string') {
+      jsonString = response
+    } else {
+      jsonString = JSON.stringify(response)
+    }
+
+    const correctedJsonString = jsonString.replace(/\bNaN\b/g, 'null')
+
+    const parsedData = JSON.parse(correctedJsonString)
+
+    details.value = parsedData?.data?.[0] ?? null
+  } catch (err) {
+    console.error('Error fetching or parsing protein details:', err)
+    // details.value = null // fallback or reset
+  }
 }
 
 // Watch for changes in the URL's query parameters
@@ -557,17 +822,10 @@ window.addEventListener('hashchange', () => {
 
 // fetch function
 async function fetchRecord() {
-  const API_URL = 'http://127.0.0.1:5400/api/v1/records/' + searchQuery.value
-  try {
-    const res = await fetch(API_URL)
-    const body = await res.json()
-    if (!res.ok || body.status === 'error') {
-      throw new Error(body.message || 'Failed to fetch record')
-    }
-    record.value = body.data
-  } catch (err) {
-    error.value = err.message
-  }
+  dashboardStore?.getExpertAnnotation(searchQuery.value).then(() => {
+    let response = dashboardStore.protein_details_new.data
+    record.value = response
+  })
 }
 
 // Render the viewer
@@ -644,10 +902,94 @@ tr:nth-child(even) {
 tr:hover {
   background-color: #f1f1f1; /* Highlight row on hover */
 }
-*{
-    font-size: 11pt !important;
+* {
+  font-size: 11pt !important;
 }
-.border-radius-none{
-    border-radius: 0;
+.border-radius-none {
+  border-radius: 0;
+}
+
+.v-treeview-node__root {
+  overflow: visible !important;
+  text-overflow: unset !important;
+  white-space: normal !important;
+}
+.v-treeview-node__label {
+  overflow: visible !important;
+  text-overflow: unset !important;
+  white-space: normal !important;
+}
+
+.anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #007bff;
+  text-decoration: none;
+  transition:
+    transform 0.2s,
+    color 0.3s;
+}
+
+.anchor:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.anchor:active {
+  transform: translateY(-3px) scale(1.1);
+}
+
+.anchor:hover iconify-icon {
+  animation: bounce 0.5s;
+}
+
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes jump {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.jump-animate {
+  animation: jump 0.6s ease;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.bouncing-badge {
+  animation: bounce 1s infinite;
 }
 </style>

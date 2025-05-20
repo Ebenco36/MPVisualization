@@ -55,6 +55,15 @@ class DashboardService {
     }, 'Bearer')
   }
 
+expertAnnotation(searchQuery) {
+  const path = `records/${searchQuery}`
+    return AxiosCall({
+      method: 'GET',
+      path: path
+    }, 'Bearer')
+}
+  
+
 }
 
 export default new DashboardService();

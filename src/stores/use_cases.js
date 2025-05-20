@@ -10,6 +10,12 @@ export const useCasesStore = defineStore('use_cases', () => {
     loader_status: false,
   });
 
+  const expert_results = ref({
+    data: [],
+    error: null,
+    loader_status: false,
+  });
+
   const get_use_cases_chart_data = ref({
     data: [],
     error: null,
@@ -30,6 +36,21 @@ export const useCasesStore = defineStore('use_cases', () => {
       use_cases_data.value.loader_status = false;
     }
   }
+
+  async function loadExpertAndMLClassifications(get_header = 'none') {
+    use_cases_data.value.loader_status = true;
+    try {
+      const res = await UseCasesService.expertAnnotations(get_header);
+      if (res) {
+        expert_results.value.data = res.data || [];
+      }
+    } catch (error) {
+      handleError(error, expert_results);
+    } finally {
+      expert_results.value.loader_status = false;
+    }
+  }
+
 
   async function getUseCasesChart(data) {
     console.log(data)
@@ -60,8 +81,10 @@ export const useCasesStore = defineStore('use_cases', () => {
 
   return { 
     use_cases_data, 
+    expert_results,
     get_use_cases_chart_data, 
     loadUseCases, 
-    getUseCasesChart 
+    getUseCasesChart,
+    loadExpertAndMLClassifications
   };
 });

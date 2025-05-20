@@ -10,6 +10,13 @@ class UseCasesService {
     }, 'Bearer')
   }
 
+  expertAnnotations() {
+    return AxiosCall({
+      method: 'GET',
+      path: 'records'
+    }, 'Bearer')
+  }
+
   postCasesContent(data) {
     return AxiosCall({
       method: 'POST',

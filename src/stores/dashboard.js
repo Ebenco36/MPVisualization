@@ -45,6 +45,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loader_status: false,
     error: []
   })
+
+  const protein_details_new = ref({
+    data: [],
+    loader_status: false,
+    error: []
+  })
+
   /* Load user dashboard information */
 
   async function loadDashboardStat(get_header = "none", trend_width=800) {
@@ -177,12 +184,37 @@ export const useDashboardStore = defineStore('dashboard', () => {
       })
   }
 
+
+  async function getExpertAnnotation(searchQuery) {
+    protein_details_new.value.loader_status = true
+      await DashboardService.expertAnnotation(searchQuery)
+      .then((res) => {
+          if (res) {
+              let response = res?.data
+              protein_details_new.value.data = response.data
+          }
+          protein_details_new.value.loader_status = false
+      })
+      .catch((error) => {
+          console.log(error)
+          protein_details_new.value.error = error
+          Swal.fire({
+              title: 'Error',
+              text: protein_details_new.value.error,
+              icon: 'error',
+              confirmButtonText: 'OK'
+          })
+          protein_details_new.value.loader_status = false
+      })
+  }
+
+
   return { 
-    dashboard, protein_details, 
+    dashboard, protein_details, protein_details_new, 
     loader_status, dashboardMap, 
     dashboardOthers, dashboardInconsistencies, 
     loadDashboardStat, dashBoardStatsMap, 
     loadDashboardStatOthers, fetchDetails, 
-    loadDashboardInconsistencies
+    loadDashboardInconsistencies, getExpertAnnotation
   }
 })
