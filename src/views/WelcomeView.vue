@@ -5,9 +5,9 @@
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
                     <span class="glyphicon glyphicon-menu-hamburger"></span>
                 </button>
-                <div class="navbar-left logo">
-                    <!-- <img :src="imagePath" alt="" width="60" /> -->
-                </div>
+                <!-- <div class="navbar-left logo">
+                    <img :src="imagePath" alt="" width="60"/>
+                </div> -->
             </div>
         </div>
     </nav>
@@ -15,7 +15,7 @@
         <div class="container">
             <div class="row p-2">
                 <div class="banner-text pb-10" style="text-align: center; width:100%">
-                    <h1>MetaMP</h1>
+                    <h1 style="color: #005EB8;"><img :src="imagePath" alt="" width="60" style="color: #005EB8;"/>MetaMP</h1>
                     <vue3-select v-model="selected" :options="suggestions" @search="fetchSuggestions"
                         @update:modelValue="handleSelection" placeholder="Search using protein code or name" :filterable="false"
                         label="label">
@@ -55,7 +55,7 @@
                     </div> 
                 </div>
 
-                <strong style="font-size: 13pt;"><strong>Last database update: </strong>  2024-03-01T12:11:00</strong>
+                <strong style="font-size: 13pt;"><strong>Last database update: </strong>  {{welcomeStore?.welcome_data?.data?.latest_date}}</strong>
                 <!-- <div class="col-md-4">
                 <img src="@/assets/DataLayer.svg" alt="Data Integration Pipeline Diagram"/>
             </div> -->
@@ -146,7 +146,7 @@ import dashboardService from '@/services/dashboard.service';
 import GraphViewWithoutCard from '@/components/dashboard/GraphViewWithoutCard.vue'
 import { useWelcomeStore } from '@/stores/welcome'
 import 'vue3-select/dist/vue3-select.css';
-import imagePath from '@/assets/image/newLogo.webp';
+import imagePath from '@/assets/image/metamp-owl.svg';
 import numeral from 'numeral';
 const d = new Date();
 const year = d.getFullYear();

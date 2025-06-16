@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTemplateStore } from '@/stores/template_switch'
-import imagePath from '@/assets/image/metamp-owl.png';
+import imagePath from '@/assets/image/metamp-owl.svg';
 import user_placeholder from '@/assets/image/user_placeholder.jpeg'
 
 const router = useRouter()
@@ -33,7 +33,7 @@ onMounted(() => {
 <template>
   <div class="main-header">
     <div class="logo">
-      <img :src="imagePath" alt="" style="width:fit-content!important"/>
+      <img :src="imagePath" alt="" style="width:max-content!important; color: #005EB8;"/>
     </div>
     <div class="menu-toggle" @click="switch_m">
       <div></div>
@@ -58,9 +58,7 @@ onMounted(() => {
       </div>
    
     <div style="margin: auto"></div>
-    <div class="header-part-right">
-      
-      <!-- User avatar dropdown -->
+    <!-- <div class="header-part-right">
       <div class="dropdown" id="view-profile">
         <div class="user col align-self-end">
           <img
@@ -78,6 +76,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>

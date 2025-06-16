@@ -1,5 +1,5 @@
 <template>
-    <div class="card card-chart-bottom o-hidden mb-4">
+    <div class="card card-chart-bottom o-hidden mb-4 d-flex align-items-stretch">
         <div class="card-body">
             <div class="card-title">
                 <div class="text-muted text-center">{{ title ? joinStringArray(title) : "Loading ..." }} </div>

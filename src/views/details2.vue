@@ -240,7 +240,7 @@
               </div>
             </div>
             <div>
-              <h3 class="h3"><strong>Sequence</strong></h3>
+              <h3 class="h3"><strong>Sequence Information</strong></h3>
               <p class="text-sm">
                 <strong>Length:</strong>
                 {{
@@ -270,6 +270,61 @@
                 />
               </p>
             </div>
+
+            <div class="row">
+                    <div class="col-md-12">
+                      <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div>
+                          <strong>Biological process (UniProt): </strong>&nbsp;
+                          <ExpandableText
+                            :text="
+                              details?.biological_process && details?.biological_process != 'null'
+                                ? details.biological_process
+                                : 'Not Specified'
+                            "
+                            :limit="100"
+                          />
+                          <strong>Cellular Components (UniProt): </strong>&nbsp;
+                          <ExpandableText
+                            :text="
+                              details?.cellular_component && details?.cellular_component != 'null'
+                                ? details.cellular_component
+                                : 'Not Specified'
+                            "
+                            :limit="100"
+                          />
+                          <strong>Molecular Functions (UniProt): </strong>&nbsp;
+                          <ExpandableText
+                            :text="
+                              details?.molecular_function && details?.molecular_function != 'null'
+                                ? details.molecular_function
+                                : 'Not Specified'
+                            "
+                            :limit="100"
+                          />
+
+                          <p class="text-sm">
+                            <strong>Annotation Score (UniProt): </strong>&nbsp;
+                            {{
+                              details?.annotation_score && details?.annotation_score != 'null'
+                                ? details.annotation_score
+                                : 'Not Specified'
+                            }}
+                          </p>
+                          <p class="text-sm">
+                            <strong>Disease Name (UniProt) </strong>&nbsp;
+                            {{
+                              details?.comment_disease_name &&
+                              details?.comment_disease_name != 'null'
+                                ? details?.comment_disease_name
+                                : 'Not Specified'
+                            }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
           </div>
         </div>
       </div>
@@ -432,13 +487,25 @@
             <div class="row">
               <div class="col-md-12 col-12">
                 <div class="mt-4 grid grid-cols-2 gap-4">
+                  <!-- {{ Object.keys(record) }} -->
                   <div
                     v-if="record && Object.keys(record).length > 0"
                     style="border: 2px solid grey; border-radius: 10px; padding: 10px"
                   >
-                    <h4 class="h4"><strong>Classification</strong></h4>
+                  
+                    <h4 class="h4" style="text-align: center;"><strong>Classification</strong></h4>
+                    <hr />
                     <p class="text-sm" v-for="(classification, index) in record" :key="index">
-                      <strong>{{ index }}:</strong>&nbsp; {{ classification }}
+                      <span v-if="index !='Year' && index != 'PDB Code' && index != 'TM (Expert)'">
+                        <strong>{{ index }}:</strong>&nbsp; {{ classification }}
+                      </span>
+                      
+                      <span v-else-if="index == 'TM (Expert)'">
+                        <hr />
+                        <h2 class="h2" style="text-align: center;"><strong>TM Segments (4)</strong></h2>
+                        <hr />
+                        <strong>{{ index }}:</strong>&nbsp; {{ classification }}
+                      </span>
                     </p>
                     <p class="text-sm">
                       <strong>TM (DeepTMHMM):</strong>&nbsp; {{ details?.DeepTMHMM_tm_count }}
@@ -446,108 +513,43 @@
                     <p class="text-sm">
                       <strong>TM (TMbed):</strong>&nbsp; {{ details?.TMbed_tm_count }}
                     </p>
+                    <p class="text-sm">
+                      <strong>TM (OPM):</strong>&nbsp; {{ details?.subunit_segments }}
+                    </p>
+
+
+                      <p class="text-sm">
+                        <template
+                          v-for="(feature, index) in parseRawData(details?.extra_attributes)?.countByFeatureType"
+                          :key="index"
+                        >
+                          <strong
+                            v-if="index.toLowerCase().includes('transmembrane')"
+                          >
+                          TM (UniProt):
+                          </strong><span
+                            v-if="index.toLowerCase().includes('transmembrane')"
+                          >{{ feature }}</span>
+                        </template>
+                      </p>
+
+
+                    
                   </div>
                   <div v-else style="border: 2px solid grey; border-radius: 10px; padding: 10px">
                     <h4 class="h4"><strong>Classification</strong></h4>
                     <p class="text-sm">
+                      <span>
+                        <strong>Group (OPM):</strong>&nbsp; {{ details?.group }}
+                      </span>
+                      <br/>
+                      <span v-if="mappedGroupName">
+                        <strong>Group (MPstruc):</strong>&nbsp; {{ mappedGroupName }}
+                      </span>
+                    </p>
+                    <p class="text-sm">
                       <strong class="badge badge-info">Data Not Available</strong>
                     </p>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="mt-4 grid grid-cols-2 gap-4">
-                        <div>
-                          <strong>Biological process: </strong>&nbsp;
-                          <ExpandableText
-                            :text="
-                              details?.biological_process && details?.biological_process != 'null'
-                                ? details.biological_process
-                                : 'Not Specified'
-                            "
-                            :limit="100"
-                          />
-                          <strong>Cellular Components: </strong>&nbsp;
-                          <ExpandableText
-                            :text="
-                              details?.cellular_component && details?.cellular_component != 'null'
-                                ? details.cellular_component
-                                : 'Not Specified'
-                            "
-                            :limit="100"
-                          />
-                          <strong>Molecular Functions: </strong>&nbsp;
-                          <ExpandableText
-                            :text="
-                              details?.molecular_function && details?.molecular_function != 'null'
-                                ? details.molecular_function
-                                : 'Not Specified'
-                            "
-                            :limit="100"
-                          />
-                          <!-- <p class="text-sm" v-expandable="{ limit: 50 }">
-                      <strong>Biological process: </strong>&nbsp; {{ details?.biological_process }}
-                    </p> -->
-
-                          <!-- <p class="text-sm">
-                      <strong>Cellular Components: </strong>&nbsp; {{ details?.cellular_component }}
-                    </p>
-
-                    <p class="text-sm">
-                      <strong>Molecular Functions: </strong>&nbsp; {{ details?.molecular_function }}
-                    </p> -->
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="mt-4 grid grid-cols-2 gap-4">
-                        <div>
-                          <h4 class="h4"><strong>Other Informations</strong></h4>
-
-                          <!--
-                          <div class="text-sm" style=" border: 1px solid #ddd; overflow: auto; max-width: 100%; max-height: 600px;">
-                            <strong>Organism Lineage: </strong>&nbsp;
-                            
-                            <TaxonomyFlow :taxonomy="parseTaxonomy(details?.organism_lineage)" width="100%" height="fit-content"/> 
-                            <div style="overflow-x: auto; white-space: nowrap; max-width: 100%;">
-                            <v-treeview
-                              :items="buildTaxonomyPath(parseTaxonomy(details?.organism_lineage))"
-                              item-title="label"
-                              item-children="children"
-                              open-all
-                              activatable
-                              density="comfortable"
-                              max-width="1200"
-                            />
-                          </div>
-                        
-                        </div>-->
-
-                          <p class="text-sm">
-                            <strong>Annotation Score: </strong>&nbsp;
-                            {{
-                              details?.annotation_score && details?.annotation_score != 'null'
-                                ? details.annotation_score
-                                : 'Not Specified'
-                            }}
-                          </p>
-
-                          <h2 class="header"><strong>Related Diseases</strong></h2>
-                          <p class="text-sm">
-                            <strong>Disease Name </strong>&nbsp;
-                            {{
-                              details?.comment_disease_name &&
-                              details?.comment_disease_name != 'null'
-                                ? details?.comment_disease_name
-                                : 'Not Specified'
-                            }}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -560,7 +562,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import HeaderCrumbs from '@/components/dashboard/HeaderCrumbs.vue'
 import ExpandableText from '@/components/ExpandableText.vue'
 // Import PDBe-Mol* CSS and plugin
@@ -570,6 +572,7 @@ import { useDashboardStore } from '@/stores/dashboard'
 // import TaxonomyFlow from '@/components/TaxonomyFlow2.vue'
 import { VTreeview } from 'vuetify/labs/VTreeview'
 import { explanations } from '@/utils/explanations'
+import LoaderComponent from "@/components/LoaderComponent.vue";
 
 function buildTaxonomyPath(path) {
   if (!Array.isArray(path) || path.length === 0) return []
@@ -731,6 +734,25 @@ function getQueryParams() {
     type: params.get('type')
   }
 }
+
+
+// Mapping dictionary
+const groupMap = {
+  "Alpha-helical polytopic": "TRANSMEMBRANE PROTEINS:ALPHA-HELICAL",
+  "Bitopic proteins": "BITOPIC PROTEINS",
+  "Beta-barrel transmembrane": "TRANSMEMBRANE PROTEINS:BETA-BARREL",
+  "All alpha monotopic/peripheral": "MONOTOPIC MEMBRANE PROTEINS",
+  "All beta monotopic/peripheral": "MONOTOPIC MEMBRANE PROTEINS",
+  "Alpha/Beta monotopic/peripheral": "MONOTOPIC MEMBRANE PROTEINS",
+  "Alpha + Beta monotopic/peripheral": "MONOTOPIC MEMBRANE PROTEINS",
+  "Alpha-helical peptides": "TRANSMEMBRANE PROTEINS:ALPHA-HELICAL"
+}
+
+// Computed value for the mapped display name
+const mappedGroupName = computed(() => {
+  const rawName = details?.value?.famsupclasstype_type_name
+  return groupMap[rawName] || rawName || null
+})
 
 // Watch for changes in searchType or searchQuery
 watch([searchType, searchQuery], () => {

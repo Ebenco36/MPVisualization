@@ -383,12 +383,12 @@ hr.v-divider.v-theme--light {
       </div>
 
       <div class="col-lg-6 col-md-6" id="trend_by_methods">
-        <div class="mb-4">
+        <div class="mb-4 ">
           <TrendByMethods :trendByMethods="dashboardStore?.dashboard?.trendByMethods" />
         </div>
       </div>
 
-      <div class="col-lg-6 col-md-6" id="mean_resolution_by_year">
+      <div class="col-lg-6 col-md-6 d-flex align-items-stretch" id="mean_resolution_by_year">
         <GraphView
           id="mean_resolution_by_year_"
           :summary="dashboardStore?.dashboardOthers?.mean_resolution_by_year"
@@ -418,10 +418,8 @@ hr.v-divider.v-theme--light {
                 v-if="dashboardStore?.dashboardMap?.map_data"
                 :headers="headers"
                 :items="dashboardStore?.dashboardMap?.map_data"
-                :footer-props="{
-                  'items-per-page-options': [5, 10, 20, 30, 40, 50]
-                }"
-                :items-per-page="20"
+                
+                :items-per-page="5"
                 :search="search"
                 @update:page="handlePageChange"
               >

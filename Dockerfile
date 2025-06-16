@@ -1,5 +1,5 @@
 # Stage 1: Build Vue.js application
-FROM node:14-alpine AS build-stage
+FROM node:18-alpine AS build-stage
 
 WORKDIR /usr/src/app
 
@@ -13,7 +13,12 @@ RUN npm install
 
 # Copy and build the application
 COPY . .
-RUN npm run build
+
+# ⬅️ Increase memory limit here (2GB or more)
+# ENV NODE_OPTIONS=--max-old-space-size=2048
+# RUN npm run build
+# Build the app with explicit memory limit
+RUN node --max-old-space-size=4096 node_modules/vite/bin/vite.js build
 
 # Stage 2: Serve the application using a lightweight image
 FROM nginx:alpine

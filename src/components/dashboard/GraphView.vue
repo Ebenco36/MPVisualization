@@ -1,5 +1,5 @@
 <template>
-  <div :class="{'card card-chart-bottom o-hidden mb-4': use_card}">
+  <div :class="{'card card-chart-bottom o-hidden mb-4 col-12': use_card}">
     <div :class="{'card-body': use_card}">
       <div class="card-title">
         <div class="text-muted text-center">{{ (title || label) ? joinStringArray(title ? title : label) : show_loading ? "Loading ..." : "" }}</div>
