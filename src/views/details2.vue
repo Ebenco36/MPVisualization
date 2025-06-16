@@ -671,6 +671,7 @@ const opts = reactive({
 // Search state
 const searchType = ref('pdb')
 const searchQuery = ref('')
+const mountedReady = ref(false)
 
 function getExplanation(featureName) {
   return explanations[featureName] || 'No explanation available.'
@@ -756,27 +757,40 @@ const mappedGroupName = computed(() => {
 
 // Watch for changes in searchType or searchQuery
 watch([searchType, searchQuery], () => {
-  if (searchType.value.toLowerCase() === 'pdb') {
-    opts.customData.url = `https://files.rcsb.org/download/${searchQuery.value}.pdb`
+  if (!mountedReady.value) return
+  if (!searchQuery.value || searchQuery.value.trim().length < 3) {
+    return
+  }
+
+  const type = searchType.value.toLowerCase()
+  const query = searchQuery.value.trim()
+
+  if (type === 'pdb') {
+    opts.customData.url = `https://files.rcsb.org/download/${query}.pdb`
     opts.customData.format = 'pdb'
-  } else if (searchType.value.toLowerCase() === 'swissmodel') {
-    opts.customData.url = `https://swissmodel.expasy.org/repository/uniprot/${searchQuery.value}.pdb`
+  } else if (type === 'swissmodel') {
+    opts.customData.url = `https://swissmodel.expasy.org/repository/uniprot/${query}.pdb`
     opts.customData.format = 'pdb'
-  } else if (searchType.value.toLowerCase() === 'uniprot') {
-    opts.customData.url = `https://www.ebi.ac.uk/pdbe/static/entry/${searchQuery.value}_updated.cif`
+  } else if (type === 'uniprot') {
+    opts.customData.url = `https://www.ebi.ac.uk/pdbe/static/entry/${query}_updated.cif`
     opts.customData.format = 'cif'
-  } else if (searchType.value.toLowerCase() === 'opm') {
-    opts.customData.url = `https://biomembhub.org/shared/opm-assets/pdb/${searchQuery.value}.pdb`
+  } else if (type === 'opm') {
+    opts.customData.url = `https://biomembhub.org/shared/opm-assets/pdb/${query}.pdb`
     opts.customData.format = 'pdb'
-  } else if (searchType.value.toLowerCase() === 'alphafold') {
-    opts.customData.url = `https://alphafold.ebi.ac.uk/files/${searchQuery.value}`
+  } else if (type === 'alphafold') {
+    opts.customData.url = `https://alphafold.ebi.ac.uk/files/${query}`
     opts.customData.format = 'cif'
   }
+
   fetchProteinDetails()
   fetchRecord()
 })
 
+
 async function fetchProteinDetails() {
+  if (!searchQuery.value || searchQuery.value.trim().length < 3) {
+    return
+  }
   try {
     await dashboardStore?.fetchDetails(searchQuery.value)
 
@@ -877,6 +891,8 @@ onMounted(() => {
 
   fetchRecord()
   renderViewer()
+
+  mountedReady.value = true
 })
 
 // Watch for changes in options and re-render
