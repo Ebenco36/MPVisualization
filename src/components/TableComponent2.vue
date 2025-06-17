@@ -12,7 +12,7 @@
             ></v-text-field>
             <div class="ml-auto">
                 <v-btn class="download-button text-20 i-Down" @click="downloadFile('csv')">CSV</v-btn>
-                <v-btn class="download-button text-20 i-Down" @click="downloadFile('xlsx')">XLSX</v-btn>
+                <v-btn class="download-button text-20 i-Down" @click="downloadFile('xlsx')">Excel</v-btn>
             </div>
         </div>
         <label class="col-md-12 switch pr-5 switch-primary mr-3 pull-right"><span>Advanced Filters</span>

@@ -49,6 +49,7 @@
         </div>
         <div class="mt-5">
         <TableComponent
+          :key="tableKey"
           :headers="headers"
           :items="items"
           :rows-per-page="10"
@@ -131,6 +132,8 @@ const range_filter = ref({
   "to": 50
 })
 
+const tableKey = ref(0)
+
 function convertToTitleCase(str) {
   return (
     str 
@@ -183,6 +186,7 @@ function getPageTitle(title){
 }
 
 function fetchGraphSummaries() {
+  tableKey.value += 1
   const id = router?.params?.id;
   let path = "field_selection=" + id
   let payload = {}
