@@ -109,9 +109,19 @@
                 </div>
             </div>
             <div class="mb-30 col-md-8 col-lg-8">
-                <GraphViewWithoutCard id="group_chart" label="Unique proteins in database"
+                <GraphViewWithoutCard v-if="welcomeStore?.welcome_data?.loader_status === false" id="group_chart" label="Unique proteins in database"
                     :summary="welcomeStore?.welcome_data?.data?.unique_trend" />
+                <v-skeleton-loader
+                    v-else
+                    class="mx-auto"
+                    elevation="12"
+                    max-width="100%"
+                    max-height="100%"
+                    type="table-heading, list-item-two-line, image, image, table-tfoot"
+                ></v-skeleton-loader>
+
             </div>
+            
             <!-- <div class="mb-30 col-md-8 col-lg-8">
                 <GraphViewWithoutCard id="method_chart" label="Reports of membrane protein structures in database"
                     :summary="welcomeStore?.welcome_data?.data?.method_chart" />
@@ -120,6 +130,7 @@
 
         </div>
     </div>
+
     <footer>
         <div class="app-footer" ref="myDiv">
             <div class="row">

@@ -9,6 +9,8 @@ import metaMPAboutView from '../views/dashboard/metaMPAboutView.vue'
 import submissionView from '../views/forms/submission.vue'
 import FaqView from '../views/faq/index.vue'
 import useCasesView from '../views/useCases/index.vue'
+import useCaseView from '../views/useCases/useCase.vue'
+import AIView from '../views/useCases/AI.vue'
 
 const ROUTES = [
   // Other pages starts here
@@ -40,9 +42,27 @@ const ROUTES = [
     }
   },
   {
+    path: '/usecase',
+    name: 'usecase',
+    component: useCaseView,
+    meta: {
+      layout: "DashboardLayout",
+      requiresAuth: true
+    }
+  },
+  {
     path: '/use-cases/:view?',
     name: 'use-cases',
     component: useCasesView,
+    meta: {
+      layout: "DashboardLayout",
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/ai-prediction',
+    name: 'ai-prediction',
+    component: AIView,
     meta: {
       layout: "DashboardLayout",
       requiresAuth: true
@@ -252,6 +272,15 @@ const ROUTES = [
     path: '/machine-learning-prediction',
     name: 'machine-learning-prediction',
     component: () => import('../views/MLView.vue'),
+    meta: {
+      layout: "DashboardLayout",
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/machine-learning-prediction-',
+    name: 'machine-learning-prediction-',
+    component: () => import('../views/MLView2.vue'),
     meta: {
       layout: "DashboardLayout",
       requiresAuth: true

@@ -4,17 +4,15 @@
         <div class="center-div card mb-4">
 
             <!-- The Modal for protein -->
-            <div class="modal" id="myModal">
+            <!-- <div class="modal" id="myModal">
             <div class="modal-dialog">
                 <div class="modal-content">
 
-                <!-- Modal Header -->
                 <div class="modal-header">
                     <h4 class="modal-title">Membrane Protein Codes</h4>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
 
-                <!-- Modal Body -->
                 <div class="modal-body">
                     <form>
                     <div class="form-group">
@@ -24,7 +22,6 @@
                     </form>
                 </div>
 
-                <!-- Modal Footer -->
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" style="color:white!important;" id="saveButton" @click="downloadSampleFile">{{ load_status ? "Loading ..." : "Download Sample!" }}</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -34,7 +31,6 @@
             </div>
             </div>
 
-            <!--  Modal -->
             <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle-2" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
@@ -77,7 +73,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <div class="card-body" style="text-align: justify;">
                 <!-- <div class="form-group mb-3">
