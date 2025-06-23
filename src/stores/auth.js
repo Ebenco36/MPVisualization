@@ -70,7 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
           auth.value.user = response?.data?.user
           auth.value.token = response?.data?.token
           auth.value.isLoading = false
-          router.replace('/dashboard').then(() => {
+          router.replace('/welcome').then(() => {
             window.location.reload();
           });
        })
