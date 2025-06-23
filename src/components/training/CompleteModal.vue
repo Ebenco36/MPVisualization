@@ -45,18 +45,18 @@ import AppButton from '@/components/common/AppButton.vue'
 // const training = useTrainingStore()
 
 function handleContinue() {
-  loadDynamicPath('/dashboard')
+  loadDynamicPath('/welcome')
   /*
   if (type.value === "training"){
     training.updateTrainingStatus('')
     loadDynamicPath('/evaluation')
   } else {
-    loadDynamicPath('/dashboard')
+    loadDynamicPath('/welcome')
   }
   */
 }
 
-function loadDynamicPath(path = '/dashboard') {
+function loadDynamicPath(path = '/welcome') {
   const host = window.location.origin;
   // Construct the full URL
   const fullURL = `${host}${path}`;

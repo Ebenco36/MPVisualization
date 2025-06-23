@@ -19,7 +19,7 @@ router.beforeEach((to, from, next) => {
   if ((authData.auth.user === null) && to.meta.requiresAuth) {
     return next({ path: '/login' })
   } else if (authData.auth.token && (requiresAuth === false)) {
-    return next({ path: '/dashboard', replace: true })
+    return next({ path: '/welcome', replace: true })
   } else {
     return next()
   }

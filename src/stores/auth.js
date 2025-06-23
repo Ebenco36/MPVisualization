@@ -58,7 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
       auth.value.token = token
       auth.value.isLoading = false
       // router.push('/dashboard')
-      router.replace('/dashboard')
+      router.replace('/welcome')
     }, 3000)
     */
 
