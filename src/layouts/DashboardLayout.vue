@@ -1,15 +1,11 @@
 <script setup>
-import { RouterView, useRoute, useRouter } from 'vue-router'
+import { RouterView } from 'vue-router'
 import DashboardHeader from '../components/dashboard/DashboardHeader.vue'
 import SideBar from '../components/dashboard/SideBar.vue'
-import AppFooter from '../components/common/AppFooter.vue';
+import AppFooter from '../components/common/AppFooter.vue'
 import { useTemplateStore } from '@/stores/template_switch'
 
 const menu_switch = useTemplateStore()
-
-const router = useRouter()
-const route = useRoute()
-
 </script>
 
 <template>

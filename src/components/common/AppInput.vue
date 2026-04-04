@@ -4,23 +4,27 @@
     <input
       class="form-control"
       :id="id"
-      type="text"
-      :v-model="value"
+      :type="type"
+      :value="value"
       :placeholder="placeholder"
+      @input="$emit('update:value', $event.target.value)"
     />
   </div>
 </template>
-<script>
+<script setup>
 defineProps({
   label: String,
   id: String,
   name: String,
   onChange: Function,
-  type: String,
+  type: {
+    type: String,
+    default: 'text'
+  },
   placeholder: String,
   value: String
 })
 
-function updateInput() {}
+defineEmits(['update:value'])
 </script>
 <style lang=""></style>

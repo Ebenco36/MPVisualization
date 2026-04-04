@@ -1,7 +1,5 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import {useToast} from 'vue-toast-notification';
-import 'vue-toast-notification/dist/theme-sugar.css';
 import TrainingService from '../services/training.service'
 
 
@@ -21,8 +19,6 @@ export const useTrainingStore = defineStore('training', () => {
     timeForEachQuestion: [],
     timeForEachQuestionStartTime: ""
   })
-
-  const $toast = useToast();
 
   const trainingDataChart = ref({})
 
@@ -58,13 +54,7 @@ export const useTrainingStore = defineStore('training', () => {
 
   async function submitTraining(userData) {
      await TrainingService.postTraing(userData)
-      .then(res => {
-        /*
-        $toast.success("Not too challenging, is it? Let's move on to the next stage—the testing phase.", {
-          "duration": 10000,
-          "position": "top-right"
-        });
-        */
+      .then(() => {
       })
       .catch(err => {
         trainingData.value.isLoading = false;
@@ -76,7 +66,7 @@ export const useTrainingStore = defineStore('training', () => {
   }
 
   async function loadCharts(data) {
-    await TrainingService.loadTrainingCharts(data)
+    return await TrainingService.loadTrainingCharts(data)
      .then(res => {
        trainingDataChart.value = res.data
        console.log(trainingDataChart.value)
@@ -103,29 +93,22 @@ export const useTrainingStore = defineStore('training', () => {
     if (!trainingData.value.questionList[trainingData.value.questCategoryNumber]?.questions[trainingData.value.questionNumber]?.options) {
       trainingData.value.questCategoryNumber = trainingData.value.questCategoryNumber + 1;
       trainingData.value.questionNumber = 0;
-      console.log("First place")
     }
     else if (trainingData.value.questionNumber <= (trainingData.value.questionList[trainingData.value.questCategoryNumber].questions.length - 1) && (trainingData.value.questionNumber !== (trainingData.value.questionList[trainingData.value.questCategoryNumber].questions.length - 1))) {
       trainingData.value.questionNumber = trainingData.value.questionNumber + 1
-      console.log("Second place")
       if (!trainingData.value.questionList[trainingData.value.questCategoryNumber]?.questions[trainingData.value.questionNumber]?.options) {
         trainingData.value.questCategoryNumber = trainingData.value.questCategoryNumber + 1;
         trainingData.value.questionNumber = 0;
-        console.log("Third place")
       }
     } else if (trainingData.value.questionNumber === trainingData.value.questionList[trainingData.value.questCategoryNumber].questions.length - 1) {
       trainingData.value.questCategoryNumber = trainingData.value.questCategoryNumber + 1;
       trainingData.value.questionNumber = 0;
-      console.log("Fourth place")
     }
     
     if ((trainingData.value.questionIndex === trainingData.value.totalQuestions - 1)) {
       trainingData.value.status = 'submit'
-      console.log("Fifth place")
     }
     trainingData.value.questionIndex += 1
-    console.log("Question number: " + trainingData.value.questionNumber)
-    console.log("Question number Index: " + trainingData.value.questionIndex)
 
     // Add implementation for time to complete each question
     handleNextQuestionTimer()
@@ -178,13 +161,11 @@ export const useTrainingStore = defineStore('training', () => {
   }
 
   function getTimeDuration() {
-    let data = {
+    return {
       "startTime": trainingData.value.startTime, 
       "endTime": trainingData.value.endTime, 
       "duration": trainingData.value.duration
     }
-    console.log(data)
-    return data
   }
 
   return {

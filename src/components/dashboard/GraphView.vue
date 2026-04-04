@@ -1,16 +1,16 @@
 <template>
-  <div :class="{'card card-chart-bottom o-hidden mb-4 col-12': use_card}">
-    <div :class="{'card-body': use_card}">
-      <div class="card-title">
-        <div class="text-muted text-center">{{ (title || label) ? joinStringArray(title ? title : label) : show_loading ? "Loading ..." : "" }}</div>
+  <div :class="rootClasses">
+    <div :class="headerClasses">
+      <div :class="titleClasses">
+        <div :class="textClasses">{{ displayTitle }}</div>
       </div>
     </div>
-    <div v-if="summary?.config" :id="id" style="overflow: auto;"></div>
+    <div v-if="summary?.config" ref="chartRoot" class="graph-view__chart"></div>
     <div v-else class="watermark">Charts are shown here.</div>
   </div>
 </template>
 <script setup>
-import { ref, toRaw, toRefs, watchEffect } from 'vue'
+import { computed, nextTick, ref, toRaw, toRefs, watchEffect } from 'vue'
 import embed from 'vega-embed'
 import { joinStringArray } from "@/utils/helpers"
 
@@ -27,59 +27,111 @@ const props = defineProps({
     default: true
   }
 })
+
 const title = ref("")
-const { summary, id, label, show_loading } = toRefs(props)
+const chartRoot = ref(null)
+const { summary, label, show_loading, use_card } = toRefs(props)
+
+const displayTitle = computed(() => {
+  if (title.value || label.value) {
+    return joinStringArray(title.value ? title.value : label.value)
+  }
+  return show_loading.value ? "Loading ..." : ""
+})
+
+const rootClasses = computed(() => (
+  use_card.value ? 'card card-chart-bottom o-hidden mb-4 col-12' : 'graph-view graph-view--plain'
+))
+
+const headerClasses = computed(() => (
+  use_card.value ? 'card-body' : 'graph-view__header--plain'
+))
+
+const titleClasses = computed(() => (
+  use_card.value ? 'card-title' : 'graph-view__title--plain'
+))
+
+const textClasses = computed(() => (
+  use_card.value ? 'text-muted text-center' : 'text-muted'
+))
+
+function getChartTitle(nextSummary) {
+  let detectedTitle = nextSummary.title
+
+  if (nextSummary.layer) {
+    detectedTitle = nextSummary.layer[0]?.title
+  } else if (nextSummary.vconcat) {
+    detectedTitle = nextSummary.vconcat[0]?.title
+  } else if (typeof nextSummary.title === "object") {
+    detectedTitle = nextSummary.title?.text
+  } else if (nextSummary.marks) {
+    detectedTitle = nextSummary.marks[0]?.title?.text
+  }
+
+  return detectedTitle || ""
+}
+
+function stripChartTitles(nextSummary) {
+  const clonedObject = structuredClone(toRaw(nextSummary))
+
+  if (clonedObject.layer) {
+    clonedObject.layer.forEach((layer) => {
+      layer.title = null
+    })
+  } else if (clonedObject.vconcat) {
+    clonedObject.vconcat.forEach((panel) => {
+      panel.title = null
+    })
+  } else if (clonedObject?.marks) {
+    clonedObject.marks.forEach((mark) => {
+      mark.title = null
+    })
+  } else {
+    clonedObject.title = null
+  }
+
+  return clonedObject
+}
 
 setTimeout(() => {
   watchEffect(async () => {
-    if (summary.value && summary.value.config) {
-      let clonedObject = { ...summary.value };
-      title.value = clonedObject.title
-      if (clonedObject.layer){
-        title.value = clonedObject.layer[0].title
-      } else if (clonedObject.vconcat){
-        title.value = clonedObject.vconcat[0].title
-      } else if (typeof clonedObject.title == "object"){
-        title.value = clonedObject.title?.text
-      } else if (clonedObject.marks){
-        title.value = clonedObject.marks[0].title?.text
-      } else {
-        title.value = clonedObject.title
-      }
-
-      if (summary.value) {
-        if (summary.value.layer){
-          summary.value.layer.title = null
-          summary.value.layer.forEach((layer) => {
-            layer.title = null
-          })
-        } else if (summary.value.vconcat){
-          summary.value.vconcat.forEach((vconcat) => {
-            vconcat.title = null
-          })
-        } else if (summary.value?.title){
-          summary.value.title = null
-        } else if (summary.value?.marks){
-          summary.value.marks.forEach((mark) => {
-            mark.title = null
-          })
-        }  else {
-          summary.value.title = null
-        }
-        await embed("#"+id.value, structuredClone(toRaw(summary.value)), { actions: true })
-
-      }
+    if (!summary.value?.config || !chartRoot.value) {
+      return
     }
+
+    title.value = getChartTitle(summary.value)
+    await nextTick()
+    await embed(chartRoot.value, stripChartTitles(summary.value), { actions: true })
   })
 }, 100)
 </script>
 <style scoped>
+.graph-view--plain {
+  display: flex;
+  flex-direction: column;
+}
+
+.graph-view__header--plain {
+  padding: 0 0 0.75rem;
+}
+
+.graph-view__title--plain {
+  color: #61747b;
+  font-size: 0.95rem;
+}
+
+.graph-view__chart {
+  width: 100%;
+  overflow: auto;
+  min-height: 280px;
+}
+
 .watermark {
-    font-size: 4vw;
-    color: rgba(0, 0, 0, 0.1);
-    z-index: 1; /* Ensure it stays in the background */
-    pointer-events: none; /* So it doesn't interfere with any content above it */
-    white-space: pre-wrap; /* Allow the text to wrap */
-    text-align: center; /* Center align the text */
-  }
+  font-size: 4vw;
+  color: rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  pointer-events: none;
+  white-space: pre-wrap;
+  text-align: center;
+}
 </style>

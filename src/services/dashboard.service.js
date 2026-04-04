@@ -1,5 +1,4 @@
 import AxiosCall from "../config/AxiosConf";
-import globalFigs from "../config/constants";
 
 class DashboardService {
   /* Dashboard service */
@@ -55,13 +54,75 @@ class DashboardService {
     }, 'Bearer')
   }
 
-expertAnnotation(searchQuery) {
-  const path = `records/${searchQuery}`
+  searchMergedRecords(searchQuery) {
+    const path = `search-merged-db?q=${encodeURIComponent(searchQuery)}`
     return AxiosCall({
       method: 'GET',
       path: path
     }, 'Bearer')
-}
+  }
+
+  expertAnnotation(searchQuery) {
+    const path = `records/${encodeURIComponent(searchQuery)}`
+    return AxiosCall({
+      method: 'GET',
+      path: path
+    }, 'Bearer')
+  }
+
+  recordLineage(searchQuery) {
+    return AxiosCall({
+      method: 'GET',
+      path: `records/${encodeURIComponent(searchQuery)}/lineage`
+    }, 'Bearer')
+  }
+
+  discrepancyReviews(params = {}) {
+    const query = new URLSearchParams(params).toString()
+    return AxiosCall({
+      method: 'GET',
+      path: `discrepancy-reviews${query ? `?${query}` : ''}`
+    }, 'Bearer')
+  }
+
+  discrepancyReview(searchQuery) {
+    return AxiosCall({
+      method: 'GET',
+      path: `discrepancy-reviews/${encodeURIComponent(searchQuery)}`
+    }, 'Bearer')
+  }
+
+  updateDiscrepancyReview(searchQuery, data) {
+    return AxiosCall({
+      method: 'PUT',
+      path: `discrepancy-reviews/${encodeURIComponent(searchQuery)}`,
+      data
+    }, 'Bearer')
+  }
+
+  discrepancyBenchmarkStatus() {
+    return AxiosCall({
+      method: 'GET',
+      path: 'discrepancy-benchmark/status'
+    }, 'Bearer')
+  }
+
+  exportDiscrepancyBenchmark(params = {}) {
+    const query = new URLSearchParams(params).toString()
+    return AxiosCall({
+      method: 'GET',
+      path: `discrepancy-benchmark/export${query ? `?${query}` : ''}`,
+      responseType: params.format === 'csv' ? 'text' : 'json'
+    }, 'Bearer')
+  }
+
+  exportHighConfidenceSubset(format = 'json') {
+    return AxiosCall({
+      method: 'GET',
+      path: `discrepancy-benchmark/high-confidence?format=${encodeURIComponent(format)}`,
+      responseType: format === 'csv' ? 'text' : 'json'
+    }, 'Bearer')
+  }
   
 
 }

@@ -11,6 +11,9 @@
         <div class="row">
             <div class="card protein-form">
                 <h2>Request Submission Form</h2>
+                <div v-if="submissionMessage" class="submission-message success-message">
+                    {{ submissionMessage }}
+                </div>
                 <form @submit.prevent="submitForm" class="form">
                     <!-- Name -->
                     <div class="row p-0 m-0">
@@ -69,16 +72,27 @@
                         <!-- Description -->
                         <div class="form-group col-md-12">
                             <label for="description">Description:</label>
-                            <QuillEditor v-model="form.description" :options="editorOptions"
-                                v-model:content="form.description" content-type="html" />
+                            <textarea
+                                id="description"
+                                v-model="form.description"
+                                rows="8"
+                                class="form-control description-textarea"
+                                :class="{ 'is-invalid': errors.description }"
+                                placeholder="Describe your request or feedback"
+                                spellcheck="false"
+                            ></textarea>
                             <div v-if="errors.description" class="error-message">
                                 {{ errors.description }}
                             </div>
                         </div>
                     </div>
-                    <div class="form-group col-md-12 mt-15 pt-10">
-                        <button type="submit" class="btn btn-primary submit-button" style="color:white;">
-                            Submit
+                    <div class="form-actions col-md-12">
+                        <button
+                            type="submit"
+                            class="btn btn-primary submit-button"
+                            :disabled="submissionStore.submission.isSubmitting"
+                        >
+                            {{ submissionStore.submission.isSubmitting ? 'Submitting...' : 'Submit' }}
                         </button>
                     </div>
                 </form>
@@ -90,8 +104,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import * as Yup from 'yup';
-import { QuillEditor } from '@vueup/vue-quill';
-import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import Swal from 'sweetalert2'
 import { useSubmissionStore } from '@/stores/submission';
 import { useRouter } from 'vue-router'
@@ -108,27 +120,8 @@ const form = ref({
     protein_code_or_name: '',
     description: '',
 });
+const submissionMessage = ref('')
 const reason = ref(null)
-const editorOptions = {
-    theme: 'snow',
-    modules: {
-        toolbar: [
-            [{ header: [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            [{ script: 'sub' }, { script: 'super' }],
-            [{ indent: '-1' }, { indent: '+1' }],
-            [{ direction: 'rtl' }],
-            [{ size: ['small', false, 'large', 'huge'] }],
-            [{ color: [] }, { background: [] }],
-            [{ align: [] }],
-            ['link', 'image', 'video'],
-            ['clean'],
-        ],
-    },
-    placeholder: 'Compose your text...',
-    readOnly: false,
-};
 
 // Validation errors state
 const errors = ref({});
@@ -140,13 +133,14 @@ const validationSchema = Yup.object().shape({
     institution: Yup.string().required('Institution is required'),
     request_type: Yup.string().required('Request type is required'),
     protein_code_or_name: Yup.string().required('Protein code or name is required'),
-    description: Yup.string().required('Description is required'),
+    description: Yup.string().trim().required('Description is required'),
 });
 
 // Form submission handler
 const submitForm = async () => {
     try {
         errors.value = {}; // Clear errors before validation
+        submissionMessage.value = ''
 
         await validationSchema.validate(form.value, { abortEarly: false });
         form.value.submitted = true;
@@ -158,30 +152,37 @@ const submitForm = async () => {
             "protein_code_or_name": form.value.protein_code_or_name, 
             "description": form.value.description
         }
-        await submissionStore.submitSubmission(payload).then(() =>{
-            
-            Swal.fire({
-                title: 'Success',
-                text: 'Successfully submitted request.',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            })
+        const response = await submissionStore.submitSubmission(payload)
+        submissionMessage.value = response?.message || 'Successfully submitted request.'
 
-            // Optionally reset form after submission
-            form.value.name = '';
-            form.value.email = '';
-            form.value.institution = '';
-            form.value.request_type = '';
-            form.value.protein_code_or_name = '';
-            form.value.description = '';
-            
+        Swal.fire({
+            title: 'Success',
+            text: submissionMessage.value,
+            icon: 'success',
+            confirmButtonText: 'OK'
         })
-        
 
-    } catch (validationErrors) {
-        validationErrors.inner.forEach((error) => {
-            errors.value[error.path] = error.message;
-        });
+        form.value.name = '';
+        form.value.email = '';
+        form.value.institution = '';
+        form.value.request_type = '';
+        form.value.protein_code_or_name = '';
+        form.value.description = '';
+    } catch (error) {
+        if (Array.isArray(error?.inner)) {
+            error.inner.forEach((validationError) => {
+                errors.value[validationError.path] = validationError.message;
+            });
+            return;
+        }
+
+        submissionMessage.value = ''
+        Swal.fire({
+            title: 'Error',
+            text: error?.response?.data?.message || error?.message || 'Unable to submit request.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        })
     }
 };
 
@@ -198,21 +199,22 @@ onMounted(() => {
 
 <style scoped>
 .protein-form {
-    width: 80%;
+    width: min(80%, 960px);
     margin: 0 auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 28px;
+    border: 1px solid #d9dee7;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
 }
 
 .form-group {
     margin-bottom: 20px;
-    /* Add margin between form groups */
 }
 
 label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     font-weight: bold;
 }
 
@@ -220,8 +222,13 @@ input,
 textarea,
 select {
     width: 100%;
-    padding: 8px;
+    padding: 10px 12px;
     box-sizing: border-box;
+}
+
+.form-control {
+    min-height: 44px;
+    border-radius: 8px;
 }
 
 .is-invalid {
@@ -233,15 +240,43 @@ select {
     font-size: 0.875em;
 }
 
-.QuillEditor {
-    height: 200px;
-    /* Adjust the height of the editor */
-    margin-bottom: 20px;
-    /* Add margin to prevent overlapping */
+.description-textarea {
+    min-height: 200px;
+    resize: vertical;
+    margin-bottom: 0;
 }
 
-button[type="submit"] {
-    margin-top: 20px;
+.submission-message {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.success-message {
+    color: #0f5132;
+    background: #d1e7dd;
+    border: 1px solid #badbcc;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 8px;
+    padding-top: 4px;
+}
+
+.submit-button {
+    min-width: 160px;
+    min-height: 44px;
+    padding: 10px 22px;
+    color: white;
+    border-radius: 8px;
+}
+
+.submit-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .submitted-data {

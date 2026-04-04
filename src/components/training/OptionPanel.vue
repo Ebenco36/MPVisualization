@@ -46,11 +46,9 @@
   </div>
 </template>
 <script setup>
-import { ref, watchEffect, toRefs } from 'vue'
+import { ref, toRefs } from 'vue'
 import { useTrainingStore } from '../../stores/training'
 import AppButton from '../common/AppButton.vue'
-import Swal from 'sweetalert2'
-import { useRouter } from 'vue-router'
 import {useToast} from 'vue-toast-notification';
 import 'vue-toast-notification/dist/theme-sugar.css';
 
@@ -63,9 +61,7 @@ const props = defineProps({
 
 const $toast = useToast();
 
-const router = useRouter()
 const selectedAnswer = ref(null)
-const classLoader = ref('')
 
 const { 
   trainingData, nextTrainingQuestionNumber, 
@@ -73,10 +69,9 @@ const {
   submitTraining, trainingEndTime, trainingDuration,
   getTimeDuration
 } = useTrainingStore()
-const { questionOptions, question, type } = toRefs(props)
+const { questionOptions, question } = toRefs(props)
 
 function handleSelectOption(selectedOption) {
-  console.log({ selectedOption })
   let compiledAnswer = selectedOption
   compiledAnswer["question"] = question.value.text;
   updateTrainingAnswers(compiledAnswer)
@@ -106,8 +101,6 @@ function handleNext() {
     nextTrainingQuestionNumber()
   }
 }
-
-watchEffect(async () => {})
 </script>
 <style scoped>
   .qs-ans-item.selected{

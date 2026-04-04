@@ -3,32 +3,42 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
-import { defineProps } from 'vue';
-import Plotly from 'plotly.js-dist-min'
+import { onMounted, ref, watch } from 'vue'
+import { getPlotly } from '@/utils/heavyLoaders'
 
 const props = defineProps({
   chartData: {
     type: Array,
-    required: true
+    required: true,
   },
   layout: {
     type: Object,
-    default: () => ({})
-  }
-});
+    default: () => ({}),
+  },
+  config: {
+    type: Object,
+    default: () => ({ responsive: true, displaylogo: false }),
+  },
+})
 
-const chart = ref(null);
+const chart = ref(null)
 
-onMounted(() => {
-  Plotly.newPlot(chart.value, props.chartData, props.layout);
+async function renderChart(data, layout, config) {
+  if (!chart.value) return
 
-  watch(
-    () => [props.chartData, props.layout],
-    ([newData, newLayout]) => {
-      Plotly.react(chart.value, newData, newLayout);
-    },
-    { deep: true }
-  );
-});
+  const Plotly = await getPlotly()
+  await Plotly.react(chart.value, data, layout, config)
+}
+
+onMounted(async () => {
+  await renderChart(props.chartData, props.layout, props.config)
+})
+
+watch(
+  () => [props.chartData, props.layout, props.config],
+  async ([newData, newLayout, newConfig]) => {
+    await renderChart(newData, newLayout, newConfig)
+  },
+  { deep: true }
+)
 </script>

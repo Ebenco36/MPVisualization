@@ -61,8 +61,7 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import HeaderCrumbs from '@/components/dashboard/HeaderCrumbs.vue'
-import 'pdbe-molstar/build/pdbe-molstar-light.css'
-import 'pdbe-molstar/build/pdbe-molstar-plugin.js'
+import { loadPdbeMolstar } from '@/utils/heavyLoaders'
 
 // Viewer container reference
 const viewerContainer = ref(null)
@@ -131,12 +130,14 @@ watch([searchType, searchQuery], () => {
 })
 
 // Render the viewer
-function renderViewer() {
+async function renderViewer() {
   const el = viewerContainer.value
   if (!el) return
 
   // Clear the container
   el.innerHTML = ''
+
+  await loadPdbeMolstar()
 
   // Create a new plugin instance
   viewerInstance = new window.PDBeMolstarPlugin()
@@ -149,8 +150,8 @@ function renderViewer() {
 }
 
 // Initial render
-onMounted(() => {
-  renderViewer()
+onMounted(async () => {
+  await renderViewer()
 })
 </script>
 

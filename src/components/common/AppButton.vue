@@ -1,5 +1,5 @@
 <template>
-  <button @click="handleClick" :type="type" class="btn" :disabled="disabled" :class="$attrs.class">
+  <button @click="handleClick" :type="type" class="btn" :disabled="disabled || isLoading" :class="$attrs.class">
     <span class="-icon" v-if="icon"><i :class="icon"></i></span>
     {{ isLoading ? 'Loading...' : label }}
   </button>
@@ -7,13 +7,34 @@
 <script>
 export default {
   props: {
-    icon: String | null,
-    label: String,
-    isLoading: Boolean,
-    disabled: Boolean,
-    handleClick: Function,
-    btnClass: String,
-    type: String
+    icon: {
+      type: String,
+      default: null
+    },
+    label: {
+      type: String,
+      default: ''
+    },
+    isLoading: {
+      type: Boolean,
+      default: false
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    handleClick: {
+      type: Function,
+      default: null
+    },
+    btnClass: {
+      type: String,
+      default: ''
+    },
+    type: {
+      type: String,
+      default: 'button'
+    }
   }
 }
 </script>

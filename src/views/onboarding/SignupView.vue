@@ -100,7 +100,7 @@
             :handleClick="handleRegister"
           />
         </div>
-        <p class="text-center mt-1">Already have an account? <a href="/login">Login</a></p>
+        <p class="text-center mt-1">Already have an account? <router-link to="/login">Login</router-link></p>
       </div>
     </form>
   </div>
@@ -109,14 +109,12 @@
 
 import { ref } from 'vue'
 import * as yup from 'yup'
-import { useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import { useAuthStore } from '@/stores/auth'
 import AppButton from '../../components/common/AppButton.vue'
 import ErrorMessage from '../../components/common/ErrorMessage.vue'
 
 /* Data */
-const router = useRouter()
 const isLoading = ref(false)
 const auth = useAuthStore()
 const togglePassword = ref(false)

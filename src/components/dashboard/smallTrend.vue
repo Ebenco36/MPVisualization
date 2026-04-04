@@ -6,7 +6,6 @@
 import { ref, watch, onMounted } from 'vue';
 import vegaEmbed from 'vega-embed';
 
-// Props
 const props = defineProps({
     data: {
         type: Array,
@@ -14,7 +13,6 @@ const props = defineProps({
             { year: '2020', count: 10 },
             { year: '2021', value: 20 },
             { year: '2022', value: 15 }
-            // Default data points
         ]
     },
     width: {
@@ -27,39 +25,39 @@ const props = defineProps({
     }
 });
 
-// Refs
 const chart = ref(null);
 
-// Watch for data changes
 watch(() => props.data, () => renderChart(), { deep: true });
 
-// Lifecycle hook
 onMounted(() => {
     renderChart();
 });
 
-// Method to render chart
 function renderChart() {
+    if (!chart.value || !props.data?.length) {
+        return;
+    }
+
     const spec = {
         $schema: "https://vega.github.io/schema/vega-lite/v5.json",
         description: "A simple smooth trend chart with embedded data.",
         data: {
             values: props.data
         },
-        width: props.width, // Uses width from props
-        height: props.height, // Uses height from props
+        width: props.width,
+        height: props.height,
         mark: {
             type: 'line',
-            interpolate: 'monotone', // Makes the line smooth
-            point: true // Removes points on the line
+            interpolate: 'monotone',
+            point: true
         },
         encoding: {
             x: {
                 field: 'year',
                 type: 'N',
                 axis: {
-                    title: null, // Remove the title on the x-axis
-                    labels: true, // Remove labels on the x-axis
+                    title: null,
+                    labels: true,
                     ticks: false,
                     domain: false,
                     values: [props.data[0].year, props.data[props.data.length - 1].year],
@@ -70,8 +68,8 @@ function renderChart() {
                 field: 'count',
                 type: 'quantitative',
                 axis: {
-                    title: null, // Remove the title on the x-axis
-                    labels: false, // Remove labels on the y-axis
+                    title: null,
+                    labels: false,
                     ticks: false,
                     domain: false
                 }
@@ -82,18 +80,18 @@ function renderChart() {
             ]
         },
         config: {
-            background: null, // Removes the background
+            background: null,
             view: {
-                stroke: null, // Removes the border around the chart
-                padding: 0 // Removes any padding around the chart
+                stroke: null,
+                padding: 0
             },
             axis: {
-                grid: false // Removes the grid lines
+                grid: false
             }
         }
     };
 
-    vegaEmbed(chart.value, spec, { actions: false }); // Disables the tool menu
+    vegaEmbed(chart.value, spec, { actions: false });
 }
 </script>
 

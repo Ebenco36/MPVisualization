@@ -7,12 +7,12 @@
           ? "Loading ..." : "" }}</div>
       </div>
     </div>
-    <div v-if="summary?.config" :id="id" style="overflow: auto;"></div>
+    <div v-if="summary?.config" ref="chartRoot" style="overflow: auto; min-height: 280px;"></div>
     <div v-else class="watermark">Charts are shown here. Probably loading ...</div>
   </div>
 </template>
 <script setup>
-import { ref, toRaw, toRefs, watchEffect } from 'vue'
+import { nextTick, ref, toRaw, toRefs, watchEffect } from 'vue'
 import embed from 'vega-embed'
 import { joinStringArray } from "@/utils/helpers"
 
@@ -25,8 +25,10 @@ const props = defineProps({
     default: true
   }
 })
+
 const title = ref("")
-const { summary, id, label } = toRefs(props)
+const chartRoot = ref(null)
+const { summary, label } = toRefs(props)
 
 const getTitle = (textObj) => {
   if (typeof textObj === 'object' && textObj !== null) {
@@ -35,36 +37,32 @@ const getTitle = (textObj) => {
     return textObj
   }
 }
+
 setTimeout(() => {
   watchEffect(async () => {
-    if (summary.value && summary.value.config) {
-      let clonedObject = { ...summary.value };
-      title.value = clonedObject.title
-      if (clonedObject.layer) {
-        title.value = clonedObject.layer[0].title
-      } else if (clonedObject.vconcat) {
-        title.value = clonedObject.vconcat[0].title
-      } else {
-        title.value = clonedObject.title
-      }
-
-      if (summary.value) {
-        if (summary.value.layer) {
-          summary.value.layer.title = null
-          summary.value.layer.forEach((layer) => {
-            layer.title = null
-          })
-        } else if (summary.value.vconcat) {
-          summary.value.vconcat.forEach((vconcat) => {
-            vconcat.title = null
-          })
-        } else {
-          summary.value.title = null
-        }
-        await embed("#" + id.value, structuredClone(toRaw(summary.value)), { actions: true })
-
-      }
+    if (!summary.value?.config || !chartRoot.value) {
+      return
     }
+
+    const clonedObject = structuredClone(toRaw(summary.value))
+    title.value = clonedObject.title
+
+    if (clonedObject.layer) {
+      title.value = clonedObject.layer[0]?.title
+      clonedObject.layer.forEach((layer) => {
+        layer.title = null
+      })
+    } else if (clonedObject.vconcat) {
+      title.value = clonedObject.vconcat[0]?.title
+      clonedObject.vconcat.forEach((panel) => {
+        panel.title = null
+      })
+    } else {
+      clonedObject.title = null
+    }
+
+    await nextTick()
+    await embed(chartRoot.value, clonedObject, { actions: true })
   })
 }, 100)
 </script>
@@ -73,12 +71,8 @@ setTimeout(() => {
   font-size: 4vw;
   color: rgba(0, 0, 0, 0.1);
   z-index: 1;
-  /* Ensure it stays in the background */
   pointer-events: none;
-  /* So it doesn't interfere with any content above it */
   white-space: pre-wrap;
-  /* Allow the text to wrap */
   text-align: center;
-  /* Center align the text */
 }
 </style>

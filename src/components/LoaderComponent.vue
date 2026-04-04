@@ -6,21 +6,33 @@
   
   <script>
   import axios from 'axios';
+  import router from '@/router';
   import globalFigs from "../config/constants"
   export default {
     data() {
       return {
         loading: false,
+        requestInterceptor: null,
+        responseInterceptor: null,
       };
     },
     mounted() {
       // Set up Axios interceptors
       this.setupInterceptors();
     },
+    beforeUnmount() {
+      if (this.requestInterceptor !== null) {
+        axios.interceptors.request.eject(this.requestInterceptor);
+      }
+
+      if (this.responseInterceptor !== null) {
+        axios.interceptors.response.eject(this.responseInterceptor);
+      }
+    },
     methods: {
       setupInterceptors() {
         // Request interceptor
-        axios.interceptors.request.use(
+        this.requestInterceptor = axios.interceptors.request.use(
           (config) => {
             this.loading = true;
             return config;
@@ -32,7 +44,7 @@
         );
   
         // Response interceptor
-        axios.interceptors.response.use(
+        this.responseInterceptor = axios.interceptors.response.use(
           (response) => {
             this.loading = false;
             return response;
@@ -41,9 +53,9 @@
             this.loading = false;
             if (error.response && error.response.status === 401) {
                 setTimeout(() => {
-                    window.location.href = '/login';
                     localStorage.removeItem(globalFigs.token);
                     localStorage.removeItem(globalFigs.user);
+                    router.replace('/login');
                 }, 2000);
             }
 

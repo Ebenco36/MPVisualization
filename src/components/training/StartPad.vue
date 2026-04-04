@@ -59,7 +59,6 @@
 </template>
 <script setup>
 import { toRefs } from 'vue'
-import { useRouter } from 'vue-router'
 import { useTrainingStore } from '../../stores/training'
 import AppButton from '../common/AppButton.vue';
 
@@ -69,18 +68,12 @@ const props = defineProps({
 })
 const { type } = toRefs(props)
 
-const router = useRouter()
-
 const training = useTrainingStore()
 
 function handleStart() {
   /* Call start training */
   training.loadQuestion(type.value)
   training.trainingStartTime()
-}
-
-function gotoPlayground() {
-  router.push("/tutorial")
 }
 
 </script>

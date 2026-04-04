@@ -1,17 +1,16 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import Plotly from 'plotly.js-dist-min'
-import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
+import { ref, onMounted, watch, nextTick, onBeforeUnmount, toRaw, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 // import VennDiagram from '@/components/VennDiagram.vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import Trend from '@/components/dashboard/Trend.vue'
-import GraphView from '@/components/dashboard/GraphView.vue'
-import StatsCard from '@/components/dashboard/StatsCard.vue'
 import TourComponent from '../../components/TourComponent.vue'
 import TrendByMethods from '@/components/dashboard/TrendByMethods.vue'
 import smallTrend from '@/components/dashboard/smallTrend.vue'
 import HeaderCrumbs from '@/components/dashboard/HeaderCrumbs.vue'
+import { getPlotly } from '@/utils/heavyLoaders'
+import embed from 'vega-embed'
 // Reactive state variables
 const dashboardStore = useDashboardStore()
 const authStore = useAuthStore()
@@ -132,15 +131,11 @@ const steps = ref([
   }
 ])
 
-const chartData = [
-  { year: '2020', count: 5 },
-  { year: '2021', count: 15 },
-  { year: '2022', count: 10 }
-]
 const trendCard = ref(null)
 const trend_width = ref(null)
 
 const chartCard = ref(null)
+const meanResolutionChart = ref(null)
 
 const search = ref('')
 const headers = [
@@ -155,6 +150,26 @@ const filter_country_data = ref([])
 const boxWidthInPercentage = 40
 const tableContainer = ref(null)
 const boxWidthInPx = ref(0)
+const hasMapRows = computed(() => Array.isArray(dashboardStore?.dashboardMap?.map_data))
+
+function cloneChartSpec(spec) {
+  const rawSpec = toRaw(spec)
+  return JSON.parse(JSON.stringify(rawSpec, (_key, value) => {
+    if (typeof value === 'function') {
+      return undefined
+    }
+
+    if (typeof window !== 'undefined' && value === window) {
+      return undefined
+    }
+
+    if (typeof document !== 'undefined' && value === document) {
+      return undefined
+    }
+
+    return value
+  }))
+}
 
 const router = useRouter()
 
@@ -192,6 +207,39 @@ watch(
   }
 )
 
+watch(
+  () => dashboardStore?.dashboardOthers?.mean_resolution_by_year,
+  async (nextChart) => {
+    if (!nextChart || !meanResolutionChart.value) {
+      return
+    }
+
+    await nextTick()
+
+    try {
+      const clonedChart = cloneChartSpec(nextChart)
+      if (clonedChart.layer) {
+        clonedChart.layer.forEach((layer) => {
+          layer.title = null
+        })
+      } else if (clonedChart.vconcat) {
+        clonedChart.vconcat.forEach((panel) => {
+          panel.title = null
+        })
+      } else {
+        clonedChart.title = null
+      }
+      await embed(meanResolutionChart.value, clonedChart, { actions: true })
+    } catch (error) {
+      console.error('Failed to render mean resolution chart', error, nextChart)
+    }
+  },
+  {
+    deep: true,
+    immediate: true
+  }
+)
+
 const handlePageChange = async (newPage) => {
   console.log('Page changed to:', newPage)
   await nextTick()
@@ -199,9 +247,10 @@ const handlePageChange = async (newPage) => {
 }
 
 // Function to create Plotly charts with common x-axis range
-function createPlotlyCharts(data) {
+async function createPlotlyCharts(data) {
   // Calculate the maximum value for the x-axis range
   if (data) {
+    const Plotly = await getPlotly()
     const maxCount = Math.max(...data.map((item) => item.count))
     const totalSum = data.reduce((acc, item) => acc + item.count, 0)
 
@@ -279,6 +328,10 @@ function createPlotlyCharts(data) {
 }
 
 function groupDataByIsoCode(data, isoCode) {
+  if (!Array.isArray(data) || !isoCode) {
+    return []
+  }
+
   // Filter data based on iso_code_2
   const filteredData = data.filter((item) => item.iso_code_2 === isoCode)
 
@@ -299,6 +352,10 @@ function groupDataByIsoCode(data, isoCode) {
 }
 
 const updateBoxWidth = () => {
+  if (!tableContainer.value) {
+    return
+  }
+
   const containerWidth =
     tableContainer.value.getBoundingClientRect().width -
     0.2 * tableContainer.value.getBoundingClientRect().width
@@ -347,168 +404,247 @@ hr.v-divider.v-theme--light {
 .v-text-field input {
   height: 25px !important;
 }
+
+.dashboard-overview {
+  padding-bottom: 2rem;
+}
+
+.dashboard-section {
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-grid-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.dashboard-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 16px 36px rgba(15, 76, 92, 0.08);
+}
+
+.dashboard-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.dashboard-panel__eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6d7b80;
+}
+
+.dashboard-panel__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #14323c;
+}
+
+.dashboard-panel__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  color: #61747b;
+}
+
+.dashboard-panel__body {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.dashboard-panel__body--chart {
+  min-height: 360px;
+}
+
+.dashboard-panel__chart-surface {
+  width: 100%;
+  min-height: 320px;
+  overflow: auto;
+}
+
+.dashboard-search {
+  margin-top: 0.75rem;
+}
+
+.dashboard-search__input {
+  border-radius: 999px;
+  border: 1px solid #d7e2e6;
+}
+
+.dashboard-empty-state {
+  padding: 1.25rem 0.25rem 0.5rem;
+  color: #61747b;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .dashboard-panel {
+    padding: 0.9rem;
+    border-radius: 20px;
+  }
+
+  .dashboard-panel__body--chart {
+    min-height: 300px;
+  }
+}
 </style>
 
 <template>
-  <div class="main-content">
+  <div class="main-content dashboard-overview">
     <HeaderCrumbs label="MetaMP Overview" title="" />
-    <div class="row">
-      <!-- <div class="col-lg-6 col-md-6 col-sm-6" id="variables" @click="gotoVariables()">
-        <StatsCard class="blue-card" icon="i-New-Tab" label="Attributes"
-          :count="dashboardStore?.dashboard?.dashData?.total_columns" />
-      </div>
-      <div class="col-lg-6 col-md-6 col-sm-6" id="entries" @click="gotoDataBase()">
-        <StatsCard class="light-blue-card" icon="i-Financial" label="Membrane Protein Structures Entries"
-          :count="dashboardStore?.dashboard?.dashData?.total_rows" />
-      </div> -->
-      <!-- <div class="col-lg-3 col-md-6 col-sm-6">
-        <StatsCard class="yellow-card" icon="i-Checkout-Basket" label="Per page"
-          :count="dashboardStore?.dashboard?.dashData?.per_page" />
-      </div>
-      <div class="col-lg-3 col-md-6 col-sm-6">
-        <StatsCard class="brown-card" icon="i-Ship" label="Total page"
-          :count="dashboardStore?.dashboard?.dashData?.total_pages" />
-      </div> -->
-    </div>
-    <div class="row" id="chart_overtime">
+    <div class="row dashboard-section" id="chart_overtime">
       <div class="col-md-12" ref="chartCard">
-        <div class="mb-4">
-          <div class="p-0" ref="trendCard" style="overflow: auto">
+        <div class="dashboard-panel" ref="trendCard">
+          <div class="dashboard-panel__header">
+            <div>
+              <p class="dashboard-panel__eyebrow">Timeline</p>
+              <h3 class="dashboard-panel__title">Resolved Membrane Protein Structures Over Time</h3>
+              <p class="dashboard-panel__subtitle">
+                Cumulative growth of resolved membrane-protein structures across the curated dataset.
+              </p>
+            </div>
+          </div>
+          <div class="dashboard-panel__body dashboard-panel__body--chart" style="overflow: auto">
             <Trend
               :trend="dashboardStore?.dashboard?.trend"
               title="Membrane Protein Structures (MPs) Interactive Visualization."
+              :use-card="false"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row dashboard-grid-row dashboard-section">
+      <div class="col-lg-6 col-md-6 d-flex align-items-stretch" id="trend_by_methods">
+        <div class="dashboard-panel w-100">
+          <div class="dashboard-panel__header">
+            <div>
+              <p class="dashboard-panel__eyebrow">Methods</p>
+              <h3 class="dashboard-panel__title">Experimental Method Trends</h3>
+              <p class="dashboard-panel__subtitle">
+                Compare how X-ray, cryo-EM, NMR, and other methods contribute to structural growth.
+              </p>
+            </div>
+          </div>
+          <div class="dashboard-panel__body dashboard-panel__body--chart">
+            <TrendByMethods
+              :trendByMethods="dashboardStore?.dashboard?.trendByMethods"
+              :use-card="false"
             />
           </div>
         </div>
       </div>
 
-      <div class="col-lg-6 col-md-6" id="trend_by_methods">
-        <div class="mb-4 ">
-          <TrendByMethods :trendByMethods="dashboardStore?.dashboard?.trendByMethods" />
-        </div>
-      </div>
-
       <div class="col-lg-6 col-md-6 d-flex align-items-stretch" id="mean_resolution_by_year">
-        <GraphView
-          id="mean_resolution_by_year_"
-          :summary="dashboardStore?.dashboardOthers?.mean_resolution_by_year"
-        />
+        <div class="dashboard-panel w-100">
+          <div class="dashboard-panel__header">
+            <div>
+              <p class="dashboard-panel__eyebrow">Resolution</p>
+              <h3 class="dashboard-panel__title">Mean Resolution by Year</h3>
+              <p class="dashboard-panel__subtitle">
+                See how structural resolution quality shifts across the historical record.
+              </p>
+            </div>
+          </div>
+          <div class="dashboard-panel__body dashboard-panel__body--chart">
+            <div ref="meanResolutionChart" class="dashboard-panel__chart-surface"></div>
+          </div>
+        </div>
       </div>
+    </div>
 
+    <div class="row dashboard-section">
       <div class="col-lg-12 col-md-12" id="release_structure_by_">
-        <div class="mb-4">
-          <div class="p-0">
-            <div class="card card-chart-bottom o-hidden">
-              <div class="card-body pb-0 mb-0" ref="tableContainer">
-                <div class="card-title p-0">
-                  <div class="text-muted text-center">Structures Released by Country</div>
-                </div>
-
-                <div class="input-group input-group-sm">
-                  <input
-                    type="text"
-                    class="form-control"
-                    placeholder="Search"
-                    v-model="search"
-                    aria-label="Search"
-                  />
-                </div>
+        <div class="dashboard-panel">
+          <div class="dashboard-panel__header">
+            <div>
+              <p class="dashboard-panel__eyebrow">Geography</p>
+              <h3 class="dashboard-panel__title">Structures Released by Country</h3>
+              <p class="dashboard-panel__subtitle">
+                Search country activity, compare relative contributions, and inspect country-level trends in one table.
+              </p>
+            </div>
+          </div>
+          <div class="dashboard-panel__body">
+            <div class="pb-0 mb-0" ref="tableContainer">
+              <div class="input-group input-group-sm dashboard-search">
+                <input
+                  type="text"
+                  class="form-control dashboard-search__input"
+                  placeholder="Search country"
+                  v-model="search"
+                  aria-label="Search"
+                />
               </div>
-              <v-data-table
-                v-if="dashboardStore?.dashboardMap?.map_data"
-                :headers="headers"
-                :items="dashboardStore?.dashboardMap?.map_data"
-                
-                :items-per-page="5"
-                :search="search"
-                @update:page="handlePageChange"
-              >
-                <!-- Custom rendering for the 'count' column -->
-                <template v-slot:[`item.country`]="{ item }">
-                  <td style="width: 20%">
-                    <div>
-                      <span>{{ item.country }}</span>
-                    </div>
-                  </td>
-                </template>
-
-                <!-- Custom rendering for the 'count' column -->
-                <template v-slot:[`item.count`]="{ item }">
-                  <td :style="{ width: boxWidthInPx + 'px' }">
-                    <div class="text-center">
-                      <div
-                        :ref="(el) => setPlotlyRef(el, item.country_number)"
-                        :style="{ width: boxWidthInPx + 'px', height: '30px' }"
-                      ></div>
-                      <span>{{ item.count }}</span>
-                    </div>
-                  </td>
-                </template>
-
-                <template v-slot:[`item.trend`]="{ item }">
-                  <td :style="{ width: boxWidthInPx + 'px', 'text-align': 'left!important' }">
-                    <div class="" style="text-align: left">
-                      <smallTrend
-                        :data="
-                          groupDataByIsoCode(
-                            dashboardStore?.dashboardMap?.country_data,
-                            item.iso_code_2
-                          )
-                        "
-                        :width="boxWidthInPx"
-                        :height="20"
-                      />
-                    </div>
-                  </td>
-                </template>
-              </v-data-table>
             </div>
-            <!-- </v-card> -->
+            <div v-if="dashboardStore?.dashboardMap?.loader_status" class="row mb-4 justify-content-center">
+              Loading country release data...
+            </div>
+            <v-data-table
+              v-else-if="hasMapRows"
+              :headers="headers"
+              :items="dashboardStore?.dashboardMap?.map_data"
+              :items-per-page="5"
+              :search="search"
+              @update:page="handlePageChange"
+            >
+              <!-- Custom rendering for the 'count' column -->
+              <template v-slot:[`item.country`]="{ item }">
+                <td style="width: 20%">
+                  <div>
+                    <span>{{ item.country }}</span>
+                  </div>
+                </td>
+              </template>
+
+              <!-- Custom rendering for the 'count' column -->
+              <template v-slot:[`item.count`]="{ item }">
+                <td :style="{ width: boxWidthInPx + 'px' }">
+                  <div class="text-center">
+                    <div
+                      :ref="(el) => setPlotlyRef(el, item.country_number)"
+                      :style="{ width: boxWidthInPx + 'px', height: '30px' }"
+                    ></div>
+                    <span>{{ item.count }}</span>
+                  </div>
+                </td>
+              </template>
+
+              <template v-slot:[`item.trend`]="{ item }">
+                <td :style="{ width: boxWidthInPx + 'px', 'text-align': 'left!important' }">
+                  <div class="" style="text-align: left">
+                    <smallTrend
+                      :data="
+                        groupDataByIsoCode(
+                          dashboardStore?.dashboardMap?.country_data,
+                          item.iso_code_2
+                        )
+                      "
+                      :width="boxWidthInPx"
+                      :height="20"
+                    />
+                  </div>
+                </td>
+              </template>
+            </v-data-table>
+            <div v-else class="dashboard-empty-state">
+              No country release data is available in this runtime.
+            </div>
           </div>
         </div>
-        <!-- <div class="col-lg-6 col-md-6" >
-            <GraphView id="membraneProteinGroup" :summary="dashboardStore?.dashboard?.membraneProteinGroup" />
-          </div> -->
-        <!-- <GraphView 
-              id="released_structures_by_country" 
-              :summary="dashboardStore?.dashboardMap?.release_structure_by_country"
-          /> -->
       </div>
-
-      <!-- <div class="col-md-6">
-          <div class="mb-4">
-            <div class="p-0">
-              <GraphView id="map" :summary="dashboardStore?.dashboardMap?.map" />
-            </div>
-          </div>
-        </div> -->
-
-      <!-- <div class="col-lg-12 col-md-12" id="data-inconsistencies" ref="chartCard">
-        <GraphView id="inconsistencies" :summary="dashboardStore?.dashboardInconsistencies?.inconsistencies" />
-      </div> -->
-
-      <!-- <div class="col-lg-6 col-md-6">
-          <div class="mb-4">
-            <div class="p-0">
-              <GraphView id="trends_by_database_year"
-                :summary="dashboardStore?.dashboardOthers?.trends_by_database_year" />
-            </div>
-          </div>
-        </div> -->
-
-      <!-- <div class="col-lg-6 col-md-6" v-for="summary in dashboardStore?.dashboard?.groupGraph" :key="summary.name">
-        <GraphView :id="summary.id + 'taxonomic'" :summary="summary.chart_obj" />
-      </div> -->
-      <!-- <div class="col-lg-6 col-md-6">
-        <div class="card card-chart-bottom o-hidden mb-4">
-          <div class="card-body">
-            <div class="card-title">
-              <div class="text-muted">A Venn diagram illustrating the relationship between PDB and MPstruc</div>
-            </div>
-          </div>
-          <VennDiagram />
-        </div>
-      </div> -->
     </div>
     <!-- end of main-content -->
     <TourComponent :steps="steps" :is-visible="!authStore?.auth?.user?.has_taken_tour" />

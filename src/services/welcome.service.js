@@ -1,5 +1,4 @@
 import AxiosCall from "../config/AxiosConf";
-import globalFigs from "../config/constants";
 
 class WelcomeService {
   /* Dashboard service */

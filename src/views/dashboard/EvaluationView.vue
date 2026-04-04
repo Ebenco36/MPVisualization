@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, reactive, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useEvaluationStore } from '@/stores/evaluation'
 import AppButton from '@/components/common/AppButton.vue'
 import EvaluationChart from '@/components/dashboard/EvaluationChart.vue'
@@ -8,18 +8,22 @@ import FiltersComponent from '@/components/FiltersComponent.vue'
 // Reactive state variables
 const evaluationStore = useEvaluationStore()
 const toggleFilter = ref(false)
-const receivedData = ref(reactive({ /* initial object */ }));
+const receivedData = ref({});
 const searchQuery = ref('');
 
 function handleFilter() {
   toggleFilter.value = !toggleFilter.value
 }
-const getChildData = (data) => {
+const getChildData = async (data) => {
   receivedData.value = data;
-  evaluationStore.MLPipeline(receivedData.value).then(() => {
-    items.value = evaluationStore?.evaluation?.dataset
-  })  
+  await evaluationStore.MLPipeline(receivedData.value)
+  items.value = evaluationStore?.evaluation?.dataset || []
 };
+
+onMounted(async () => {
+  await evaluationStore.MLPipeline(receivedData.value)
+  items.value = evaluationStore?.evaluation?.dataset || []
+})
 
 // Implement variables visuals
 const items = ref([/* Your long list of items here */]);
@@ -66,11 +70,6 @@ watchEffect(() => {
 });
 */
 
-onMounted(() => {
-  evaluationStore.MLPipeline(receivedData.value).then(() => {
-    items.value = evaluationStore?.evaluation?.dataset
-  })  
-})
 </script>
 <template>
   <div class="main-content">

@@ -11,325 +11,227 @@ import FaqView from '../views/faq/index.vue'
 import useCasesView from '../views/useCases/index.vue'
 import useCaseView from '../views/useCases/useCase.vue'
 import AIView from '../views/useCases/AI.vue'
+import ErrorPageView from '../views/ErrorPage.vue'
+
+const dashboardMeta = {
+  layout: 'DashboardLayout',
+  requiresAuth: true
+}
+
+const authMeta = {
+  layout: 'AuthLayout',
+  requiresAuth: false
+}
+
+const plainMeta = {
+  layout: 'PlainLayout',
+  requiresAuth: true
+}
 
 const ROUTES = [
-  // Other pages starts here
   {
     path: '/metamp-about',
     name: 'metamp-about',
     component: metaMPAboutView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/faq',
     name: 'faq',
     component: FaqView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/make-submission/:reason?',
     name: 'make-submission',
     component: submissionView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/usecase',
     name: 'usecase',
     component: useCaseView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/use-cases/:view?',
     name: 'use-cases',
     component: useCasesView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/ai-prediction',
     name: 'ai-prediction',
     component: AIView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
-  // other pages ends here
-
   {
     path: '/admin-feedback',
     name: 'admin-feedback',
     component: AdminFeedbacksView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/admin-user-responses',
     name: 'admin-user-responses',
     component: AdminUserResponsesView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/welcome',
     name: 'welcome',
     component: WelcomeView,
-    meta: {
-      layout: "PlainLayout",
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/admin-feedback',
-    name: 'admin-feedback',
-    component: AdminFeedbacksView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/admin-user-responses',
-    name: 'admin-user-responses',
-    component: AdminUserResponsesView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: plainMeta
   },
   {
     path: '/dashboard',
     name: 'dashboard',
     component: DashboardView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/profile',
-    name: 'Profile',
+    name: 'profile',
     component: () => import('../views/dashboard/UserProfile.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/summary',
     name: 'summary',
     component: () => import('../views/dashboard/summary/Overview.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/summary/:id',
     name: 'summary-details',
     component: () => import('../views/dashboard/summary/Details.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/details/:pdb_code',
     name: 'details',
     component: () => import('../views/dashboard/Details.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/evaluation',
     name: 'evaluation',
     component: TrainingView,
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/evaluation_old',
+    name: 'evaluation-old',
     component: () => import('../views/dashboard/EvaluationView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/exploration',
+    name: 'exploration',
     component: () => import('../views/dashboard/Exploration.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   { path: '/tab/:id', name: 'tab', component: () => import('@/components/Tab.vue') },
   {
     path: '/tutorial',
+    name: 'tutorial',
     component: () => import('../views/tutorial/ML.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/variables/:key?',
+    name: 'variables',
     component: () => import('../views/dashboard/VariableView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/databaseTable',
+    name: 'database-table',
     component: () => import('../views/dashboard/DatabaseTable.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/molecular-viewer/:pdb_code?',
+    name: 'molecular-viewer',
     component: () => import('../views/dashboard/MolecularViewer.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/details-2',
+    name: 'details-2',
     component: () => import('../views/details2.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/test-viewer',
+    name: 'test-viewer',
     component: () => import('../views/dashboard/TestView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/about',
-    component: () => import('../views/dashboard/AboutView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/contact',
+    name: 'contact',
     component: () => import('../views/dashboard/ContactView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/about',
     name: 'about',
     component: () => import('../views/dashboard/AboutView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/sunburst',
     name: 'sunburst',
     component: () => import('../views/dashboard/SunBurstView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/machine-learning-prediction',
     name: 'machine-learning-prediction',
-    component: () => import('../views/MLView.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    component: () => import('../views/MLView2.vue'),
+    meta: dashboardMeta
   },
   {
     path: '/machine-learning-prediction-',
     name: 'machine-learning-prediction-',
     component: () => import('../views/MLView2.vue'),
-    meta: {
-      layout: "DashboardLayout",
-      requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/login',
-    name: 'Login',
+    name: 'login',
     component: LoginView,
-    meta: {
-      layout: "AuthLayout",
-        requiresAuth: false
-    }
+    meta: authMeta
   },
   {
     path: '/signup',
-    name: 'Signup',
+    name: 'signup',
     component: () => import('../views/onboarding/SignupView.vue'),
-    meta: {
-      layout: "AuthLayout",
-        requiresAuth: false
-    }
+    meta: authMeta
   },
   {
     path: '/forgot-password',
-    name: 'ForgotPassword',
+    name: 'forgot-password',
     component: () => import('../views/onboarding/ForgotPassword.vue'),
-    meta: {
-      layout: "AuthLayout",
-        requiresAuth: false
-    }
+    meta: authMeta
   },
   {
     path: '/timer-test',
-    name: 'timerTest',
+    name: 'timer-test',
     component: () => import('../views/TimerVue.vue'),
-    meta: {
-      layout: "DashboardLayout",
-        requiresAuth: true
-    }
+    meta: dashboardMeta
   },
   {
     path: '/',
     redirect: '/dashboard'
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: ErrorPageView,
+    meta: authMeta
   }
-  // {
-  //   path: "/:pathMatch(.*)*",
-  //   redirect: '/login'
-  // }
 ]
 
 export default ROUTES

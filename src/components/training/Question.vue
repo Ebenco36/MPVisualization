@@ -67,7 +67,14 @@
                           <option v-for="option in tool.filter_tool_options" :key="option.value" :value="option.value">
                             {{ option.text }}</option>
                         </select>
-                        <button id="filter-button" class="btn btn-sm btn-primary mt-2">Apply Changes</button>
+                        <button
+                          id="filter-button"
+                          type="button"
+                          class="btn btn-sm btn-primary mt-2"
+                          @click="postChart({}, false)"
+                        >
+                          Apply Changes
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -92,7 +99,7 @@
                         <v-pagination v-model="currentPage" :length="chart?.total_pages"></v-pagination>
                       </div>
                     </template>
-                    <template v-slot:item.actions="{ item }">
+                    <template v-slot:[`item.actions`]="{ item }">
                       <v-icon class="me-2" size="small" @click="viewItem(item)">
                         mdi-eye
                       </v-icon>
@@ -260,7 +267,8 @@
 </template>
 <script setup>
 import Swal from 'sweetalert2'
-import { ref, toRefs, watch, onMounted } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { debounce } from 'lodash'
 import { useTrainingStore } from '../../stores/training'
 import GraphView from '@/components/dashboard/GraphView.vue'
 import TourComponent from "../../components/TourComponent.vue"
@@ -328,10 +336,9 @@ const steps = ref([
   }
 ])
 
-const props = defineProps({
+defineProps({
   type: String,
 })
-const { type } = toRefs(props)
 
 const width = ref(0)
 const chart = ref({})
@@ -341,6 +348,10 @@ const form_input = ref(null)
 const viewToggle = ref(false)
 const training = useTrainingStore()
 const noDataText = ref('No data available')
+let resizeHandler = null
+const debouncedAutoPostChart = debounce(() => {
+  postChart({}, false)
+}, 150)
 
 function handleScale() {
   viewToggle.value = !viewToggle.value
@@ -351,15 +362,43 @@ const getSelectedOptions = (questions) => {
 
   for (const category of questions) {
     for (const question of category.questions) {
-      for (const filterTool of question.filter_tools) {
+      for (const filterTool of (question.filter_tools || [])) {
         const { name, selected_option } = filterTool;
-        if (selected_option != "") {
+        if (
+          selected_option !== "" &&
+          selected_option !== null &&
+          selected_option !== undefined &&
+          (!Array.isArray(selected_option) || selected_option.length > 0)
+        ) {
           selectedOptionsObject[name] = selected_option;
         }
       }
     }
   }
   return selectedOptionsObject;
+}
+
+const getCurrentQuestion = () => (
+  training.trainingData.questionList[training.trainingData.questCategoryNumber]?.questions[
+    training.trainingData.questionNumber
+  ] || null
+)
+
+const getPrimarySelectedVariable = (question) => {
+  const selectedTool = (question?.filter_tools || []).find((tool) => {
+    const value = tool?.selected_option
+    if (Array.isArray(value)) {
+      return value.length > 0
+    }
+    return value !== "" && value !== null && value !== undefined
+  })
+
+  if (!selectedTool) {
+    return null
+  }
+
+  const value = selectedTool.selected_option
+  return Array.isArray(value) ? value[0] || null : value
 }
 
 const searchAndGetValue = (keyToSearch) => {
@@ -386,7 +425,6 @@ const updateOptions = (questionId, value) => {
   })
 
   const foundItem = option_list.find(item => item.value === value?.total_rows);
-  console.log(option_list)
 
   if (foundItem) {
     question.options[foundItem.location_id].is_correct = true
@@ -406,17 +444,24 @@ const updateOptions = (questionId, value) => {
 };
 
 async function postChart(val, allow = false) {
-  if ((form_input.value[0].value && form_input.value[0].value != "") || allow) {
-    let question = training.trainingData.questionList[training.trainingData.questCategoryNumber]?.questions[training.trainingData.questionNumber]
+  await nextTick()
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+
+  const question = getCurrentQuestion()
+  const variable = getPrimarySelectedVariable(question)
+
+  if (variable || allow) {
+    width.value = chartCard.value?.clientWidth || width.value || 960
+
     let payload = {
       "type": question?.question_type,
       "question": parseInt(training.trainingData.questionIndex) + 1,
-      "variable": form_input.value[0].value,
+      "variable": variable,
       "variables": getSelectedOptions(training.trainingData.questionList),
       "page": currentPage.value,
       "chart_width": width.value
     }
-    await training.loadCharts(payload).then((res) => {
+    await training.loadCharts(payload).then(() => {
       chart.value = training.trainingDataChart
 
       if (question && question.id && training.trainingData.questionList[training.trainingData.questCategoryNumber]?.name == 'Data Filtering') {
@@ -440,15 +485,13 @@ watch(() => training.trainingData.questionIndex, (newValue, oldValue) => {
   }
   
   if ([4, 5].includes(newValue)) {
-    console.log("we are shoiwing question number here: " + newValue)
-    // We are doing this so that we can load content by default
-    form_input.value[0].value == "emt_molecular_weight"
+    const question = getCurrentQuestion()
+    if (question?.filter_tools?.[0]) {
+      question.filter_tools[0].selected_option = "emt_molecular_weight"
+    }
     postChart({}, true)
-    console.log(document.querySelectorAll('p p.show-for-question-5-and-6'))
     document.querySelectorAll('p p.show-for-question-5-and-6').forEach(element => {
-        console.log(element.style.display)
         element.style.display = "block";
-        console.log(element.style.display)
     });
     document.querySelectorAll('p p.show-for-question-6').forEach(element => {
         element.style.display = "block";
@@ -468,16 +511,35 @@ watch(() => currentPage.value, (newValue, oldValue) => {
   postChart({}, true)
 });
 
+watch(
+  () => JSON.stringify(getCurrentQuestion()?.filter_tools || []),
+  (newValue, oldValue) => {
+    if (!newValue || newValue === oldValue) {
+      return
+    }
+
+    const question = getCurrentQuestion()
+    if (!question?.filter_tools?.length) {
+      return
+    }
+
+    if (getPrimarySelectedVariable(question)) {
+      debouncedAutoPostChart()
+    }
+  }
+)
+
 onMounted(() => {
   if (chartCard.value) {
     width.value = chartCard.value.clientWidth;
   }
   
-  window.addEventListener('resize', () => {
+  resizeHandler = () => {
     if (chartCard.value) {
       width.value = chartCard.value.clientWidth;
     }
-  });
+  }
+  window.addEventListener('resize', resizeHandler);
 
   if ([4, 5].includes(training.trainingData.questionIndex)) {
     document.querySelectorAll('p p.show-for-question-5-and-6').forEach(element => {
@@ -492,6 +554,13 @@ onMounted(() => {
     
   }
 });
+
+onBeforeUnmount(() => {
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+  }
+  debouncedAutoPostChart.cancel()
+})
 
 </script>
 <style>

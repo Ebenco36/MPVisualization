@@ -5,20 +5,14 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-
-RUN npm cache clean --force
-
-# Install dependencies
-RUN npm install
+RUN npm cache clean --force && npm ci --no-audit --no-fund
 
 # Copy and build the application
 COPY . .
 
-# ⬅️ Increase memory limit here (2GB or more)
-# ENV NODE_OPTIONS=--max-old-space-size=2048
-# RUN npm run build
-# Build the app with explicit memory limit
-RUN node --max-old-space-size=4096 node_modules/vite/bin/vite.js build
+# Let Node use the memory available in the build container instead of forcing
+# a large heap reservation that can fail on smaller builders.
+RUN npm run build
 
 # Stage 2: Serve the application using a lightweight image
 FROM nginx:alpine

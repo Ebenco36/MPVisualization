@@ -1,14 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getKeyList } from "../../utils/helpers"
 import user_placeholder from '@/assets/image/user_placeholder.jpeg'
 
 
-const router = useRouter()
 const authData = useAuthStore()
-const user = authData.auth.user
+const user = ref(authData.auth.user)
 
 const headers = ref([])
 const transformedData = ref([])
@@ -27,7 +25,9 @@ function removeUnderscoreAndCapitalize(str = "") {
 
 
 function transformData() {
-    transformedData.value = user.user_responses.map(item => {
+    const userResponses = user.value?.user_responses || []
+
+    transformedData.value = userResponses.map(item => {
         const question = item.question || {};
         const options = question.options || [];
         const answerId = item.answer_id;
@@ -43,15 +43,20 @@ function transformData() {
             is_correct: item.is_correct ? "Correct" : "Invalid",
         };
       });
-    }
+}
 
-onMounted(() => {
-    authData.loadUser()
+async function hydrateProfile() {
+    const loadedUser = await authData.ensureSession()
+    user.value = loadedUser || authData.auth.user
     transformData()
     const outputArray = getKeyList(transformedData.value).map(item => {
         return { title: removeUnderscoreAndCapitalize(item), value: item };
-    });
+    })
     headers.value = outputArray
+}
+
+onMounted(() => {
+    hydrateProfile()
 })
 
 </script>
@@ -69,8 +74,8 @@ onMounted(() => {
     <div class="card user-profile o-hidden mb-4">
         <div class="header-cover" style="background-image: url('./src/assets/image/newLogo.webp')"></div>
         <div class="user-info"><img class="profile-picture avatar-lg mb-2" :src="user_placeholder" alt="" />
-            <p class="m-0 text-24">{{ user.name }}</p>
-            <p class="text-muted m-0">{{ user.is_admin ? "Admin" : "User" }}</p>
+            <p class="m-0 text-24">{{ user?.name }}</p>
+            <p class="text-muted m-0">{{ user?.is_admin ? "Admin" : "User" }}</p>
         </div>
         <div class="card-body">
             <div class="content" id="">
@@ -83,26 +88,26 @@ onMounted(() => {
                     <div class="row">
                         <div class="col-md-4 col-6">
                             <div class="mb-4">
-                                <p class="text-primary mb-1"><i class="i-Calendar text-16 mr-1"></i> Username</p><span>{{ user.username }}</span>
+                                <p class="text-primary mb-1"><i class="i-Calendar text-16 mr-1"></i> Username</p><span>{{ user?.username }}</span>
                             </div>
                             <div class="mb-4">
-                                <p class="text-primary mb-1"><i class="i-Globe text-16 mr-1"></i> Location</p><span>{{ user.location ? user.location : "NILL" }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <div class="mb-4">
-                                <p class="text-primary mb-1"><i class="i-MaleFemale text-16 mr-1"></i> Email</p><span>{{ user.email }}</span>
-                            </div>
-                            <div class="mb-4">
-                                <p class="text-primary mb-1"><i class="i-Cloud-Weather text-16 mr-1"></i> Tour?</p><span>{{ user.has_taken_tour ? "Yes" : "No" }}</span>
+                                <p class="text-primary mb-1"><i class="i-Globe text-16 mr-1"></i> Location</p><span>{{ user?.location ? user.location : "NILL" }}</span>
                             </div>
                         </div>
                         <div class="col-md-4 col-6">
                             <div class="mb-4">
-                                <p class="text-primary mb-1"><i class="i-Face-Style-4 text-16 mr-1"></i> Phone</p><span>{{ user.phone ? user.phone : "NILL" }}</span>
+                                <p class="text-primary mb-1"><i class="i-MaleFemale text-16 mr-1"></i> Email</p><span>{{ user?.email }}</span>
                             </div>
                             <div class="mb-4">
-                                <p class="text-primary mb-1"><i class="i-Home1 text-16 mr-1"></i> Institute</p><span>{{ user.institute ? user.institute : "NILL" }}</span>
+                                <p class="text-primary mb-1"><i class="i-Cloud-Weather text-16 mr-1"></i> Tour?</p><span>{{ user?.has_taken_tour ? "Yes" : "No" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="mb-4">
+                                <p class="text-primary mb-1"><i class="i-Face-Style-4 text-16 mr-1"></i> Phone</p><span>{{ user?.phone ? user.phone : "NILL" }}</span>
+                            </div>
+                            <div class="mb-4">
+                                <p class="text-primary mb-1"><i class="i-Home1 text-16 mr-1"></i> Institute</p><span>{{ user?.institute ? user.institute : "NILL" }}</span>
                             </div>
                         </div>
                     </div>

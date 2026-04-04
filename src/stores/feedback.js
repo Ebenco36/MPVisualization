@@ -2,11 +2,9 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import FeedbackService from '../services/feedback.service'
 import Swal from 'sweetalert2'
-import { useRouter } from 'vue-router'
 
 export const useFeedbackStore = defineStore('feedback', () => {
 
-  const router = useRouter()
   const feedback = ref({
     feedbackQuestion: [],
     error: null
@@ -18,12 +16,10 @@ export const useFeedbackStore = defineStore('feedback', () => {
       .then((res) => {
         if (res) {
           let response = res?.data
-          console.log(response)
           feedback.value.feedbackQuestion = response
         }
       })
       .catch((error) => {
-        console.log(error)
         feedback.value.error = error
         Swal.fire({
           title: 'Error',
@@ -35,13 +31,11 @@ export const useFeedbackStore = defineStore('feedback', () => {
   }
 
   async function submitFeedback(data) {
-    console.log(data)
-    await FeedbackService.postFeedback(data)
+    return await FeedbackService.postFeedback(data)
       .then((response) => {
-        return response
+        return response?.data
       })
       .catch((error) => {
-        console.log(error)
         feedback.value.error = error
         Swal.fire({
           title: 'Error',

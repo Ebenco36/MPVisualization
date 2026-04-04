@@ -1,5 +1,4 @@
 <script>
-import { RouterView } from 'vue-router'
 import DashboardLayout from './layouts/DashboardLayout.vue'
 import AuthLayout from './layouts/AuthLayout.vue'
 import PlainLayout from './layouts/PlainLayout.vue'

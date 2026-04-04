@@ -1,20 +1,25 @@
-import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
-import ROUTES from './routes';
-import { useAuthStore } from '../stores/auth';
+import { createRouter, createWebHashHistory } from 'vue-router'
+import ROUTES from './routes'
+import { useAuthStore } from '../stores/auth'
 
-/* 
-  CreateRouter 
-*/
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
-  // history: createWebHistory(),
   routes: ROUTES
 })
 
 
-router.beforeEach((to, from, next) => {
-  const authData = useAuthStore();
-  const { requiresAuth } = to.meta;
+router.beforeEach(async (to, from, next) => {
+  const authData = useAuthStore()
+  const { requiresAuth } = to.meta
+
+  if (to.meta.requiresAuth) {
+    try {
+      await authData.ensureSession()
+    } catch (error) {
+      console.error(error)
+      return next({ path: '/login' })
+    }
+  }
 
   if ((authData.auth.user === null) && to.meta.requiresAuth) {
     return next({ path: '/login' })
@@ -23,7 +28,6 @@ router.beforeEach((to, from, next) => {
   } else {
     return next()
   }
-
 })
 
 export default router

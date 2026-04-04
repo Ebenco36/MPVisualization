@@ -1,51 +1,52 @@
 <template>
-    <div>
-      <div v-for="(chartConfig, index) in chartConfigs" :key="index" :ref="setChartRef(index)"></div>
-    </div>
-  </template>
-  
-  <script setup>
-  import { ref, onMounted, watch } from 'vue';
-  import Plotly from 'plotly.js-dist-min';
-  
-  const props = defineProps({
-    chartConfigs: {
-      type: Array,
-      required: true
+  <div>
+    <div v-for="(chartConfig, index) in chartConfigs" :key="index" :ref="setChartRef(index)"></div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, watch } from 'vue'
+import { getPlotly } from '@/utils/heavyLoaders'
+
+const props = defineProps({
+  chartConfigs: {
+    type: Array,
+    required: true,
+  },
+})
+
+const chartRefs = ref([])
+
+const setChartRef = (index) => (el) => {
+  if (el) {
+    chartRefs.value[index] = el
+  }
+}
+
+const loadCharts = async (chartConfigs) => {
+  const Plotly = await getPlotly()
+
+  chartConfigs.forEach((config, index) => {
+    const chartDiv = chartRefs.value[index]
+    if (chartDiv) {
+      Plotly.react(chartDiv, config.data, config.layout)
     }
-  });
-  
-  const chartRefs = ref([]);
-  
-  const setChartRef = (index) => (el) => {
-    if (el) {
-      chartRefs.value[index] = el;
-    }
-  };
-  
-  const loadCharts = (chartConfigs) => {
-    chartConfigs.forEach((config, index) => {
-      const chartDiv = chartRefs.value[index];
-      if (chartDiv) {
-        Plotly.newPlot(chartDiv, config.data, config.layout);
-      }
-    });
-  };
-  
-  onMounted(() => {
-    if (props.chartConfigs.length) {
-      loadCharts(props.chartConfigs);
-    }
-  });
-  
-  watch(() => props.chartConfigs, (newChartConfigs) => {
+  })
+}
+
+onMounted(async () => {
+  if (props.chartConfigs.length) {
+    await loadCharts(props.chartConfigs)
+  }
+})
+
+watch(
+  () => props.chartConfigs,
+  async (newChartConfigs) => {
     if (newChartConfigs.length) {
-      loadCharts(newChartConfigs);
+      await loadCharts(newChartConfigs)
     }
-  }, { deep: true });
-  </script>
-  
-  <style scoped>
-  /* Add any component-specific styles here */
-  </style>
-  
+  },
+  { deep: true }
+)
+</script>

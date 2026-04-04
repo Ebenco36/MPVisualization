@@ -4,24 +4,23 @@ import AboutService from '../services/about_metamp.service'
 import Swal from 'sweetalert2'
 
 export const useAboutStore = defineStore('about', () => {
-
   const about_data = ref({
     data: [],
+    summary: { rows: [], generated_at: null },
     error: null,
     loader_status: false
   })
 
-  /* Load user dashboard information */
-
-  async function loadAboutPage(get_header = "none") {
+  async function loadAboutPage() {
     about_data.value.loader_status = true
-    await AboutService.aboutServiceContent(get_header)
-      .then((res) => {
-        if (res) {
-          let response = res?.data
-          about_data.value.data = response
-        }
-        
+
+    await Promise.all([
+      AboutService.aboutServiceContent(),
+      AboutService.aboutSummaryContent()
+    ])
+      .then(([aboutRes, summaryRes]) => {
+        about_data.value.data = aboutRes?.data || {}
+        about_data.value.summary = summaryRes?.data || { rows: [], generated_at: null }
         about_data.value.loader_status = false
       })
       .catch((error) => {
@@ -37,7 +36,8 @@ export const useAboutStore = defineStore('about', () => {
       })
   }
 
-  return { 
-    about_data, loadAboutPage
+  return {
+    about_data,
+    loadAboutPage
   }
 })

@@ -43,6 +43,7 @@ import { ref, onMounted } from 'vue'
 import * as yup from 'yup'
 import { useForm } from 'vee-validate'
 import { useAuthStore } from '@/stores/auth'
+import globalFigs from '@/config/constants'
 import AppButton from '@/components/common/AppButton.vue'
 import ErrorMessage from '@/components/common/ErrorMessage.vue'
 
@@ -54,8 +55,8 @@ const togglePassword = ref(false)
 /* Effects */
 const { errors, handleSubmit, defineInputBinds } = useForm({
   validationSchema: yup.object({
-    email: yup.string().default("admin01@gmail.com").required('Username/email is required'),
-    password: yup.string().default("password").min(8, 'Too short').required('Password is required.')
+    email: yup.string().default(globalFigs.defaultLogin.email).required('Username/email is required'),
+    password: yup.string().default(globalFigs.defaultLogin.password).min(8, 'Too short').required('Password is required.')
   })
 })
 
@@ -66,8 +67,8 @@ const password = defineInputBinds('password')
 const handleLogin = handleSubmit((vals) => {
   /* Setup loading */
   if (Object.keys(vals).length === 0) {
-    vals.email = "admin01@gmail.com"
-    vals.password = "password"
+    vals.email = globalFigs.defaultLogin.email
+    vals.password = globalFigs.defaultLogin.password
   }
 
   isLoading.value = true

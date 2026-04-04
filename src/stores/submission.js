@@ -2,14 +2,14 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import SubmissionService from '../services/submission.service'
 import Swal from 'sweetalert2'
-import { useRouter } from 'vue-router'
 
 export const useSubmissionStore = defineStore('submission', () => {
 
-  const router = useRouter()
   const submission = ref({
     submissionQuestion: [],
-    error: null
+    latestSubmission: null,
+    error: null,
+    isSubmitting: false
   })
   /* Load user dashboard information */
 
@@ -34,19 +34,21 @@ export const useSubmissionStore = defineStore('submission', () => {
   }
 
   async function submitSubmission(data) {
-    await SubmissionService.postSubmission(data)
+    submission.value.isSubmitting = true
+    submission.value.error = null
+
+    return await SubmissionService.postSubmission(data)
       .then((response) => {
-        return response
+        submission.value.latestSubmission = response?.data ?? null
+        return response?.data
       })
       .catch((error) => {
         console.log(error)
         submission.value.error = error
-        Swal.fire({
-          title: 'Error',
-          text: submission.value.error,
-          icon: 'error',
-          confirmButtonText: 'OK'
-        })
+        throw error
+      })
+      .finally(() => {
+        submission.value.isSubmitting = false
       })
   }
 

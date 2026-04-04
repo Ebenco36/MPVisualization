@@ -13,7 +13,7 @@ const AxiosCall = async (callObj, authType = '') => {
     }
   */
 
-  const { path, method, data, contentType } = callObj
+  const { path, method, data, contentType, responseType } = callObj
 
   const noAuthHeaders = {
     "Content-Type": contentType || "application/json",
@@ -38,7 +38,7 @@ const AxiosCall = async (callObj, authType = '') => {
       method,
       data,
       headers,
-      responseType: 'json'
+      responseType: responseType || 'json'
     })
     
     return response;

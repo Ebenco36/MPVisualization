@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
+  let sessionPromise = null
   const auth = ref({
     token: localStorage.getItem(globalFigs.token),
     user: JSON.parse(localStorage.getItem(globalFigs.user)),
@@ -19,13 +20,15 @@ export const useAuthStore = defineStore('auth', () => {
     const token = localStorage.getItem(globalFigs.token);
     if (token) {
       auth.value.token = token;
-      await AuthService.loadUser()
+      return await AuthService.loadUser()
         .then((res) => {
           auth.value.user = res?.data?.data
           localStorage.setItem(globalFigs.user, JSON.stringify(res?.data?.data))
+          return auth.value.user
         })
         .catch((error) => {
           console.error({ error })
+          throw error
         })
     } else {
       AuthService.logout()
@@ -46,7 +49,8 @@ export const useAuthStore = defineStore('auth', () => {
 
 
 
-  async function login(userData) {
+  async function login(userData, options = {}) {
+    const { redirect = true } = options
     auth.value.isLoading = true;
     /*
     setTimeout(() => {
@@ -62,7 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
     }, 3000)
     */
 
-    await AuthService.login(userData)
+    return await AuthService.login(userData)
        .then(res => {
           let response = res?.data
           localStorage.setItem(globalFigs.token, response?.data?.token)
@@ -70,9 +74,10 @@ export const useAuthStore = defineStore('auth', () => {
           auth.value.user = response?.data?.user
           auth.value.token = response?.data?.token
           auth.value.isLoading = false
-          router.replace('/welcome').then(() => {
-            window.location.reload();
-          });
+          if (redirect) {
+            router.replace('/welcome')
+          }
+          return response?.data?.user
        })
        .catch((error) => {
          auth.value.isLoading = false;
@@ -80,7 +85,38 @@ export const useAuthStore = defineStore('auth', () => {
          setTimeout(() => {
            auth.value.error = null;
          }, 3000)
+         throw error
        });
+  }
+
+  async function ensureSession(options = {}) {
+    const { allowDefaultLogin = true } = options
+
+    if (auth.value.token && auth.value.user) {
+      return auth.value.user
+    }
+
+    if (sessionPromise) {
+      return sessionPromise
+    }
+
+    sessionPromise = (async () => {
+      try {
+        if (localStorage.getItem(globalFigs.token)) {
+          return await loadUser()
+        }
+
+        if (allowDefaultLogin) {
+          return await login({ ...globalFigs.defaultLogin }, { redirect: false })
+        }
+
+        return null
+      } finally {
+        sessionPromise = null
+      }
+    })()
+
+    return sessionPromise
   }
 
   async function register(userData) {
@@ -103,13 +139,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function forgotPassword(userData) {
-    await AuthService.forgotPassword(userData)
+    auth.value.isLoading = true
+    return await AuthService.forgotPassword(userData)
       .then((res) => {
-        /* 
-          TODO redirect to completed page or to password setup page
-          
-        */
-        console.log(res);
+        auth.value.isLoading = false
+        return res?.data
       })
       .catch((error) => {
         auth.value.isLoading = false;
@@ -117,6 +151,7 @@ export const useAuthStore = defineStore('auth', () => {
         setTimeout(() => {
           auth.value.error = null;
         }, 3000)
+        throw error
       })
   }
 
@@ -125,12 +160,13 @@ export const useAuthStore = defineStore('auth', () => {
     await AuthService.logout()
       .then(res => {
         let response = res?.data
-        if(response.status)
+        if(response.status) {
           localStorage.removeItem(globalFigs.token);
           localStorage.removeItem(globalFigs.user);
           auth.value.user = null
           auth.value.token = null
           router.replace('/login')
+        }
       })
       .catch((error) => {
         auth.value.isLoading = false;
@@ -144,5 +180,5 @@ export const useAuthStore = defineStore('auth', () => {
   /* Validate user */
   /* Store user data */
 
-  return { auth, loadUser, login, register, logout, updateUser, forgotPassword }
+  return { auth, loadUser, login, ensureSession, register, logout, updateUser, forgotPassword }
 })

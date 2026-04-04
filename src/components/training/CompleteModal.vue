@@ -32,9 +32,12 @@
 </template>
 <script setup>
 import AppButton from '@/components/common/AppButton.vue'
+import { useRouter } from 'vue-router'
 // import { useTrainingStore } from '@/stores/training'
 // import { useRouter } from 'vue-router'
 // import { toRefs } from 'vue'
+
+const router = useRouter()
 
 // const props = defineProps({
 //   type: String,
@@ -45,7 +48,7 @@ import AppButton from '@/components/common/AppButton.vue'
 // const training = useTrainingStore()
 
 function handleContinue() {
-  loadDynamicPath('/welcome')
+  router.push('/welcome')
   /*
   if (type.value === "training"){
     training.updateTrainingStatus('')
@@ -54,13 +57,6 @@ function handleContinue() {
     loadDynamicPath('/welcome')
   }
   */
-}
-
-function loadDynamicPath(path = '/welcome') {
-  const host = window.location.origin;
-  // Construct the full URL
-  const fullURL = `${host}${path}`;
-  window.location.href = fullURL;
 }
 </script>
 <style lang=""></style>

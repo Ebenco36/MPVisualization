@@ -1,8 +1,6 @@
 import AxiosCall from "../config/AxiosConf";
-import globalFigs from "../config/constants";
 
 class AboutService {
-  /* Dashboard service */
   aboutServiceContent() {
     return AxiosCall({
       method: 'GET',
@@ -10,6 +8,12 @@ class AboutService {
     }, 'Bearer')
   }
 
+  aboutSummaryContent() {
+    return AxiosCall({
+      method: 'GET',
+      path: 'about-metamp/summary'
+    }, 'Bearer')
+  }
 }
 
 export default new AboutService();

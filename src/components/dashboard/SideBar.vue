@@ -69,12 +69,11 @@
           </router-link>
           <!-- <div class="triangle"></div> -->
         </li>
-        <li class="nav-item" id="mpvis_machine-learning-prediction">
+        <!-- <li class="nav-item" id="mpvis_machine-learning-prediction">
           <router-link class="nav-item-hold" to="/machine-learning-prediction" @click="menu_switch?.toggleMenu()"><i
               class="nav-icon i-Cloud-Computer"></i> <span class="nav-text">MPs Grouping</span>
           </router-link>
-          <!-- <div class="triangle"></div> -->
-        </li>
+        </li> -->
         <!-- <li class="nav-item" data-item="mpvis_use_cases" id="mpvis_use_cases">
           <router-link class="nav-item-hold" to="/use-cases" @click="menu_switch?.toggleMenu()"
             ><i class="nav-icon i-Suitcase"></i> <span class="nav-text">Use Cases</span>

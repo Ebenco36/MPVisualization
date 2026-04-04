@@ -1,15 +1,15 @@
 <template>
-  <p class="expandable-text">
-    <span v-html="displayText"></span>
-    <a
+  <div class="expandable-text">
+    <span class="expandable-text__content" v-html="displayText"></span>
+    <button
       v-if="isTruncated"
-      href="#"
-      @click.prevent="toggle"
+      type="button"
+      @click="toggle"
       class="expand-toggle"
     >
       {{ expanded ? 'Show less' : 'Read more' }}
-    </a>
-  </p>
+    </button>
+  </div>
 </template>
 
 <script setup>
@@ -99,11 +99,28 @@ watch([
 </script>
 
 <style scoped>
+.expandable-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+  max-width: 100%;
+}
+
+.expandable-text__content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .expandable-text .expand-toggle {
-  margin-left: 0.25rem;
+  padding: 0;
+  border: none;
+  background: transparent;
   color: #007bff;
   cursor: pointer;
   text-decoration: none;
+  font-weight: 600;
 }
 .expandable-text .expand-toggle:hover {
   text-decoration: underline;

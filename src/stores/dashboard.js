@@ -52,6 +52,24 @@ export const useDashboardStore = defineStore('dashboard', () => {
     error: []
   })
 
+  const record_lineage = ref({
+    data: null,
+    loader_status: false,
+    error: null
+  })
+
+  const discrepancy_review = ref({
+    data: null,
+    loader_status: false,
+    error: null
+  })
+
+  const benchmark_status = ref({
+    data: null,
+    loader_status: false,
+    error: null
+  })
+
   /* Load user dashboard information */
 
   async function loadDashboardStat(get_header = "none", trend_width=800) {
@@ -162,7 +180,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function fetchDetails(pdb_code) {
     protein_details.value.loader_status = true
-      const endpoint = "search-merged-db?pdb_code=" + pdb_code
+      const endpoint = "search-merged-db?q=" + encodeURIComponent(pdb_code)
       await DashboardService.fetchData(endpoint)
       .then((res) => {
           if (res) {
@@ -208,13 +226,71 @@ export const useDashboardStore = defineStore('dashboard', () => {
       })
   }
 
+  async function getRecordLineage(searchQuery) {
+    record_lineage.value.loader_status = true
+    try {
+      const res = await DashboardService.recordLineage(searchQuery)
+      record_lineage.value.data = res?.data?.data || null
+    } catch (error) {
+      console.log(error)
+      record_lineage.value.error = error
+    } finally {
+      record_lineage.value.loader_status = false
+    }
+  }
+
+  async function getDiscrepancyReview(searchQuery) {
+    discrepancy_review.value.loader_status = true
+    try {
+      const res = await DashboardService.discrepancyReview(searchQuery)
+      discrepancy_review.value.data = res?.data?.data || null
+    } catch (error) {
+      console.log(error)
+      discrepancy_review.value.error = error
+      discrepancy_review.value.data = null
+    } finally {
+      discrepancy_review.value.loader_status = false
+    }
+  }
+
+  async function updateDiscrepancyReview(searchQuery, payload) {
+    discrepancy_review.value.loader_status = true
+    try {
+      const res = await DashboardService.updateDiscrepancyReview(searchQuery, payload)
+      discrepancy_review.value.data = res?.data?.data || null
+      return discrepancy_review.value.data
+    } catch (error) {
+      console.log(error)
+      discrepancy_review.value.error = error
+      throw error
+    } finally {
+      discrepancy_review.value.loader_status = false
+    }
+  }
+
+  async function getBenchmarkStatus() {
+    benchmark_status.value.loader_status = true
+    try {
+      const res = await DashboardService.discrepancyBenchmarkStatus()
+      benchmark_status.value.data = res?.data?.data || null
+    } catch (error) {
+      console.log(error)
+      benchmark_status.value.error = error
+      benchmark_status.value.data = null
+    } finally {
+      benchmark_status.value.loader_status = false
+    }
+  }
+
 
   return { 
-    dashboard, protein_details, protein_details_new, 
+    dashboard, protein_details, protein_details_new,
+    record_lineage, discrepancy_review, benchmark_status,
     loader_status, dashboardMap, 
     dashboardOthers, dashboardInconsistencies, 
     loadDashboardStat, dashBoardStatsMap, 
     loadDashboardStatOthers, fetchDetails, 
-    loadDashboardInconsistencies, getExpertAnnotation
+    loadDashboardInconsistencies, getExpertAnnotation,
+    getRecordLineage, getDiscrepancyReview, updateDiscrepancyReview, getBenchmarkStatus
   }
 })

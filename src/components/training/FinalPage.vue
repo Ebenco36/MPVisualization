@@ -9,19 +9,7 @@
     </div>
   </template>
   <script setup>
-  import { toRefs } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { useTrainingStore } from '../../stores/training'
   import thankYou from '@/assets/image/thankyou.jpeg';
-  
-  const props = defineProps({
-    type: String,
-  })
-  const { type } = toRefs(props)
-  
-  const router = useRouter()
-  
-  const training = useTrainingStore()
   </script>
   <style lang=""></style>
   

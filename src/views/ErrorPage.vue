@@ -19,7 +19,7 @@ import AppButton from '../components/common/AppButton.vue';
 const router = useRouter();
 
 function redirectTo() {
-  router.push('/evaluation')
+  router.push('/dashboard')
 }
 </script>
 <style lang=""></style>

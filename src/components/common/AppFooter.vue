@@ -31,8 +31,7 @@ const year = d.getFullYear();
 
 onMounted(() => {
   if (myDiv.value) {
-    divHeight.value = myDiv.value.clientHeight + 10; // 10 is added as padding
-    console.log('Div height:', divHeight.value);
+    divHeight.value = myDiv.value.clientHeight + 10
   }
 });
 

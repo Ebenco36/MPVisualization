@@ -4,37 +4,45 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 
-
-// https://vitejs.dev/config/
 export default defineConfig({
   define: {
-    "process.env": {},
+    'process.env': {},
   },
   optimizeDeps: {
-    exclude: ['vuetify'],
-    // include: ['msw'],
+    exclude: ['vuetify'], 
   },
-  plugins: [
-    vue(),
-    vueJsx(),
-  ],
+  plugins: [vue(), vueJsx()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
   },
   css: {
     preprocessorOptions: {
-      // scss: {
-      //   additionalData: `@use "@/assets/scss/main.scss";`,
-      // },
+      scss: {
+        api: 'modern-compiler',
+      },
     },
   },
   build: {
     sourcemap: false,
+    minify: 'esbuild',
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1200,
   },
   server: {
     host: '0.0.0.0',
-    port: 5173, // Change this to the desired port
+    port: 5173,
+    proxy: {
+      '/pdbtm': {
+        target:       'https://pdbtm.unitmp.org',
+        changeOrigin: true,
+        rewrite:      (path) => path.replace(/^\/pdbtm/, ''),
+        // Needed so the browser trusts the CSS as same-origin → cssRules accessible
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+      },
+    },
   },
 })

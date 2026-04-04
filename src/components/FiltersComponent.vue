@@ -55,20 +55,19 @@
   </template>
   <script setup>
     import { useFilterStore } from '@/stores/filters'
-    import { ref, onMounted, defineEmits, defineProps } from 'vue'
+    import { ref, onMounted, defineEmits, nextTick } from 'vue'
     import AppButton from '@/components/common/AppButton.vue'
-    // import CustomToolTips from '@/components/CustomToolTips.vue';
-    
     
     const filterData = ref({})
     
     const filters = useFilterStore()
-    const emit = defineEmits(['childEvent']);
-    function sendData() {
-        console.log(filterData.value)
-        // Emit an event to the parent with some data
-        emit('childEvent', removeNullOrEmptyObjects(filterData.value));
-    };
+    const emit = defineEmits(['childEvent'])
+
+    async function sendData() {
+        await nextTick()
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        emit('childEvent', removeNullOrEmptyObjects(filterData.value))
+    }
 
     function removeNullOrEmptyObjects(obj) {
         const result = {};
@@ -109,8 +108,7 @@
     }
 
     onMounted(() => {
-        filters.loadFilters().then((res) => {
-            console.log(res)
+        filters.loadFilters().then(() => {
             filterData.value = generateObject(filters?.filters?.data)
         })
         

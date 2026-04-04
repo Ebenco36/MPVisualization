@@ -101,6 +101,7 @@
 import dashboardService from '../../../services/dashboard.service';
 import TableComponent from "@/components/TableComponent.vue";
 import HeaderCrumbs from "@/components/dashboard/HeaderCrumbs.vue";
+import { getChartTitle } from '@/utils/heavyLoaders'
 import embed from 'vega-embed'
 import { useRoute } from 'vue-router'
 import { ref, onMounted, toRaw } from 'vue'
@@ -133,6 +134,25 @@ const range_filter = ref({
 })
 
 const tableKey = ref(0)
+
+function cloneChartSpec(spec) {
+  const rawSpec = toRaw(spec)
+  return JSON.parse(JSON.stringify(rawSpec, (_key, value) => {
+    if (typeof value === 'function') {
+      return undefined
+    }
+
+    if (typeof window !== 'undefined' && value === window) {
+      return undefined
+    }
+
+    if (typeof document !== 'undefined' && value === document) {
+      return undefined
+    }
+
+    return value
+  }))
+}
 
 function convertToTitleCase(str) {
   return (
@@ -211,10 +231,25 @@ function fetchGraphSummaries() {
       headers.value = resp?.headers;
       dataList.value = resp?.group_dict;
       otherDataList.value = resp?.other_group_dict;
-      let clonedObject = { ...graph.value };
-      title.value = checkType(clonedObject.title)
-      graph.value.title = null
-      embed("#display", structuredClone(toRaw(graph.value)));
+      title.value = checkType(getChartTitle(graph.value))
+
+      try {
+        const clonedChart = cloneChartSpec(graph.value)
+        if (clonedChart.layer) {
+          clonedChart.layer.forEach((layer) => {
+            layer.title = null
+          })
+        } else if (clonedChart.vconcat) {
+          clonedChart.vconcat.forEach((panel) => {
+            panel.title = null
+          })
+        } else {
+          clonedChart.title = null
+        }
+        await embed("#display", clonedChart, { actions: true });
+      } catch (error) {
+        console.error("Failed to render summary statistics chart", error, graph.value);
+      }
     })
     .catch((err) => {
       console.log("There is an error" + err);

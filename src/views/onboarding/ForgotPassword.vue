@@ -19,9 +19,9 @@
       </div>
       <div class="form-group mt-4">
         <AppButton
-          label="Login"
+          label="Send Reset Link"
           class="btn-primary btn-block"
-          :isLoading="isLoading"
+          :isLoading="auth.auth.isLoading"
           type="submit"
         />
       </div>
@@ -33,15 +33,14 @@
 </template>
 <script setup>
 import AppButton from '../../components/common/AppButton.vue'
-import { useRouter } from 'vue-router'
-import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
+import Swal from 'sweetalert2'
+import { useAuthStore } from '@/stores/auth'
 import ErrorMessage from '../../components/common/ErrorMessage.vue'
 
 /* Components Data */
-const router = useRouter()
-const isLoading = ref(false)
+const auth = useAuthStore()
 
 /* Effects */
 
@@ -54,20 +53,14 @@ const { errors, handleSubmit, defineInputBinds } = useForm({
 const email = defineInputBinds('email')
 
 /* Functions  */
-const handleLogin = handleSubmit((vals) => {
-  /* Setup loading */
-  isLoading.value = true
-
-  /* 
-    Timeout base on API response 
-      Make request to endpoint
-
-    
-    */
-  setTimeout(() => {
-    isLoading.value = false
-    router.push('/dashboard')
-  }, 1000)
+const handleLogin = handleSubmit(async ({ email }) => {
+  await auth.forgotPassword({ email })
+  Swal.fire({
+    title: 'Request Sent',
+    text: 'If the account exists, a reset link has been requested.',
+    icon: 'success',
+    confirmButtonText: 'OK'
+  })
 })
 </script>
 <style lang="scss"></style>

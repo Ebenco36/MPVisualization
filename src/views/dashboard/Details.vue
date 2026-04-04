@@ -2,6 +2,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios';
+import { get3DMol } from '@/utils/heavyLoaders'
 import AppButton from '@/components/common/AppButton.vue'
 import { useDashboardStore } from '@/stores/dashboard'
 const router = useRouter()
@@ -84,7 +85,7 @@ function handleFilter() {
 async function initializeViewer() {
     try {
     // Dynamically import 3Dmol.js library
-    const mol3D = await import('3dmol/build/3Dmol.js');
+    const mol3D = await get3DMol();
     viewer.value = mol3D.createViewer(
         "display", {
             rows: 2,
@@ -167,8 +168,8 @@ function handleMouseClick(event) {
 async function fetchProteinDetails() {
     dashboardStore?.fetchDetails(pdbCode.value).then(() => {
       let response = dashboardStore.protein_details.data
-      let correctedJsonString = response.replace(/\bNaN\b/g, "null");
-      details.value = JSON.parse(correctedJsonString)?.data[0]
+      const normalizedResponse = typeof response === 'string' ? response.replace(/\bNaN\b/g, "null") : JSON.stringify(response)
+      details.value = JSON.parse(normalizedResponse)?.data?.[0]
     })
 }
 
@@ -255,7 +256,7 @@ onMounted(() => {
           <div class="col-md-12">
             <div class="card mb-4">
               <div class="card-body p-0" style="overflow-y: auto;">
-                <h5 class="card-title m-0 p-3">Protein Summary {{ pdbCode }} (Has pdb code been replaced ? {{ details?.is_replaced == "Replaced" ? "Yes" : "No" }})</h5>
+                <h5 class="card-title m-0 p-3">Protein Summary {{ pdbCode }} (Has pdb code been replaced ? {{ details?.is_replaced ? "Yes" : "No" }})</h5>
                 <div class="container content">
                     <p><strong>Name:</strong>&nbsp;
                         {{ details?.name_x }}

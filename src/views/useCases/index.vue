@@ -1,51 +1,67 @@
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { debounce } from 'lodash'
 import Swal from 'sweetalert2'
-import axios from 'axios'
+import { format } from 'date-fns'
 import AppButton from '@/components/common/AppButton.vue'
 import { useCasesStore } from '@/stores/use_cases'
 import GraphView from '@/components/dashboard/GraphView.vue'
 import HeaderCrumbs from '@/components/dashboard/HeaderCrumbs.vue'
+import StructureExpertNotesDialog from '@/components/useCases/StructureExpertNotesDialog.vue'
+import DiscrepancyReviewDialog from '@/components/useCases/DiscrepancyReviewDialog.vue'
+import StructureNotesRealtimeService from '@/services/structure_notes_realtime.service'
+import {
+  basicPredictorCountColumns,
+  buildDiscrepancyRow,
+  downloadExportResponse,
+  getColumnValue
+} from '@/utils/discrepancyQueue'
 
 const router = useRouter()
 const casesStore = useCasesStore()
-
-
-// 1) The search term
 const search = ref('')
-// Define columns for v-data-table
+const page = ref(1)
+const perPage = ref(10)
+const exportingFormat = ref(null)
+const decisionNotesDialog = ref(false)
+const activeDecisionNotes = ref('')
+const activeDecisionPdb = ref('')
+const expandedRows = ref([])
+let stopStructureNotesRealtime = null
 const headers = [
   { title: 'Year', value: 'Year' },
   { title: 'PDB Code', value: 'PDB Code' },
+  { title: 'Group (Expert)', value: 'Group (Expert)' },
+  { title: 'TM (Expert)', value: 'TM (Expert)' },
+  { title: 'Group Disagreement', value: 'group_disagreement' },
+  { title: 'TM Disagreement', value: 'tm_disagreement' },
+  { title: 'TM Boundary Disagreement', value: 'tm_boundary_disagreement' },
+  { title: 'Benchmark Decision', value: 'benchmark_status' },
+  { title: 'Benchmark Recommended', value: 'benchmark_recommended' },
+  { title: 'Confidence', value: 'scientific_confidence' },
+  { title: 'Review', value: 'review_action', sortable: false },
+  { title: 'Notes', value: 'expert_notes', sortable: false },
+  { title: 'Details', value: 'details', sortable: false },
+  { title: 'Actions', value: 'actions', sortable: false }
+]
+
+const detailFields = [
   { title: 'Group (OPM)', value: 'Group (OPM)' },
   { title: 'Group (MPstruc)', value: 'Group (MPstruc)' },
   { title: 'Group (Predicted)', value: 'Group (Predicted)' },
-  { title: 'Group (Expert)', value: 'Group (Expert)' },
-  {
-    title: 'TM (Expert)',
-    value: 'TM (Expert)',
-    headerClass: 'bg-red lighten-4',
-    cellClass: 'bg-red lighten-4'
-  },
-  {
-    title: 'TMbed TM Count',
-    value: 'TMbed_tm_count',
-    headerClass: 'bg-red lighten-4',
-    cellClass: 'bg-red lighten-4'
-  },
-  {
-    title: 'DeepTMHMM TM Count',
-    value: 'DeepTMHMM_tm_count',
-    headerClass: 'bg-red lighten-4',
-    cellClass: 'bg-red lighten-4'
-  }
+  ...basicPredictorCountColumns,
+  { title: 'Confidence', value: 'scientific_confidence' },
+  { title: 'Context-dependent Topology', value: 'context_dependent_topology' },
+  { title: 'Non-canonical Membrane Case', value: 'non_canonical_membrane_case' },
+  { title: 'Multichain Context', value: 'multichain_context' },
+  { title: 'Obsolete or Replaced', value: 'obsolete_or_replaced' }
 ]
 
 // Reactive state
 const rows = ref([])
 const loading = ref(false)
+const benchmarkStatus = ref(null)
 
 const chart_width = ref(null)
 const width = ref(null)
@@ -61,21 +77,41 @@ const outlier_detection_algorithm = ref(null)
 const errors = ref([])
 const view = ref(router.currentRoute.value.params?.view)
 const page_title = ref('')
+const queuePagination = computed(() => casesStore.discrepancy_review_queue.pagination || {
+  page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  returned_items: 0,
+  has_prev: false,
+  has_next: false
+})
 
-const loadingData = async () => {
+const loadDiscrepancyQueue = async () => {
   loading.value = true
   try {
-    await casesStore.loadExpertAndMLClassifications()
-    let data = casesStore.expert_results.data
-    if (data.data.length === 0) {
+    const [payload] = await Promise.all([
+      casesStore.loadDiscrepancyReviewQueue({
+        disagreement_only: false,
+        search: search.value || undefined,
+        page: page.value,
+        per_page: perPage.value
+      }),
+      casesStore.loadBenchmarkStatus()
+    ])
+    benchmarkStatus.value = casesStore.benchmark_status.data
+    rows.value = (payload?.items || []).map((candidate) =>
+      buildDiscrepancyRow(candidate, basicPredictorCountColumns)
+    )
+    resubscribeStructureNotesRealtime()
+
+    if ((payload?.pagination?.total_items || 0) === 0) {
       Swal.fire({
         title: 'No Data',
-        text: 'No records found for the selected filters.',
+        text: 'No records found for the current discrepancy search.',
         icon: 'info',
         confirmButtonText: 'OK'
       })
-    } else {
-      rows.value = data.data
     }
   } catch (err) {
     console.error('Fetch failed:', err)
@@ -86,13 +122,220 @@ const loadingData = async () => {
 
 function handleFilter() {
   toggleFilter.value = !toggleFilter.value
-  fetchCharts()
 }
-// helper to pull off the leading number
-const parseExpert = (val) => {
-  const m = String(val).match(/^(\d+)/)
-  return m ? parseInt(m[1], 10) : NaN
+
+const formattedBenchmarkRelease = computed(() => {
+  const releaseId = benchmarkStatus.value?.release_id
+  if (!releaseId) return null
+  const match = String(releaseId).match(
+    /^(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})Z$/
+  )
+  if (!match) return releaseId
+  const [, year, month, day, hour, minute, second] = match
+  const utcDate = new Date(
+    Date.UTC(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    )
+  )
+  return format(utcDate, 'MMM d, yyyy HH:mm') + ' UTC'
+})
+
+const openRecord = (item) => {
+  const pdbCode = item?._raw?.pdb_code || item?.['PDB Code']
+  if (!pdbCode) return
+  window.open(`/#/details-2?code=${encodeURIComponent(pdbCode)}&type=pdb`, '_blank')
 }
+
+const exportDiscrepancyTable = async (format) => {
+  exportingFormat.value = format
+  try {
+    const response = await casesStore.exportDiscrepancyReviewQueue(
+      {
+        disagreement_only: false,
+        search: search.value || undefined
+      },
+      format
+    )
+    const extension = format === 'xlsx' ? 'xlsx' : format
+    downloadExportResponse(response, `metamp_discrepancy_review_queue.${extension}`)
+  } catch (error) {
+    console.error('Discrepancy export failed:', error)
+    Swal.fire({
+      title: 'Export Failed',
+      text: 'The discrepancy queue export could not be generated.',
+      icon: 'error',
+      confirmButtonText: 'OK'
+    })
+  } finally {
+    exportingFormat.value = null
+  }
+}
+
+function isBooleanChipColumn(column) {
+  return [
+    'group_disagreement',
+    'tm_disagreement',
+    'tm_boundary_disagreement',
+    'benchmark_recommended',
+    'context_dependent_topology',
+    'non_canonical_membrane_case',
+    'multichain_context',
+    'obsolete_or_replaced'
+  ].includes(column?.key || column?.value)
+}
+
+function isScientificConfidenceColumn(column) {
+  return column?.key === 'scientific_confidence' || column?.value === 'scientific_confidence'
+}
+
+function chipColorForBooleanLabel(label) {
+  if (label === 'Yes') return 'warning'
+  if (label === 'No') return 'success'
+  return 'default'
+}
+
+function chipVariantForBooleanLabel(label) {
+  return label === 'Not Specified' ? 'outlined' : 'flat'
+}
+
+function benchmarkStatusChipColor(item) {
+  switch (item?.benchmark_status_code) {
+    case 'high_confidence_subset':
+      return 'success'
+    case 'included_with_caution':
+      return 'warning'
+    case 'not_recommended':
+      return 'deep-orange'
+    case 'excluded':
+      return 'error'
+    default:
+      return 'default'
+  }
+}
+
+function scientificConfidenceChipColor(item) {
+  switch (item?.scientific_confidence_code) {
+    case 'high':
+      return 'success'
+    case 'medium':
+      return 'warning'
+    case 'low':
+      return 'deep-orange'
+    case 'none':
+      return 'default'
+    default:
+      return 'default'
+  }
+}
+
+function shortenDecisionNotes(value, maxLength = 96) {
+  const text = String(value || '').trim()
+  if (!text || text === 'Not Specified') return 'Not Specified'
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength - 1)}…`
+}
+
+function openDecisionNotes(item) {
+  activeDecisionNotes.value = item?.benchmark_reason || 'Not Specified'
+  activeDecisionPdb.value = item?.['PDB Code'] || ''
+  decisionNotesDialog.value = true
+}
+
+
+function normalizePdbCode(value) {
+  const text = String(value || '').trim().toUpperCase()
+  return text || null
+}
+
+function itemMatchesStructureNoteUpdate(item, payload) {
+  const candidateCodes = [
+    item?.['PDB Code'],
+    item?._raw?.record?.pdb_code,
+    item?._raw?.record?.canonical_pdb_code,
+    item?._raw?.canonical_pdb_code,
+  ].map((value) => normalizePdbCode(value)).filter(Boolean)
+
+  const payloadCodes = [payload?.pdb_code, payload?.canonical_pdb_code]
+    .map((value) => normalizePdbCode(value))
+    .filter(Boolean)
+
+  return payloadCodes.some((value) => candidateCodes.includes(value))
+}
+
+function applyStructureNoteRealtimeUpdate(payload) {
+  rows.value.forEach((item) => {
+    if (itemMatchesStructureNoteUpdate(item, payload)) {
+      handleExpertNotesUpdated(item, payload?.summary)
+    }
+  })
+}
+
+function resubscribeStructureNotesRealtime() {
+  if (typeof stopStructureNotesRealtime === 'function') {
+    stopStructureNotesRealtime()
+    stopStructureNotesRealtime = null
+  }
+
+  const pdbCodes = rows.value.map((item) => item?.['PDB Code']).filter(Boolean)
+  if (!pdbCodes.length) return
+
+  stopStructureNotesRealtime = StructureNotesRealtimeService.subscribeToStructureNotes(
+    pdbCodes,
+    applyStructureNoteRealtimeUpdate
+  )
+}
+
+function handleExpertNotesUpdated(item, summary) {
+  const normalizedSummary = {
+    note_count: Number(summary?.note_count || 0),
+    open_note_count: Number(summary?.open_note_count || 0),
+    latest_note_at: summary?.latest_note_at || null,
+    latest_note_excerpt: summary?.latest_note_excerpt || null,
+    recent_notes: Array.isArray(summary?.recent_notes) ? summary.recent_notes : [],
+  }
+  item.expert_note_count = normalizedSummary.note_count
+  item.latest_expert_note_excerpt = normalizedSummary.latest_note_excerpt || 'Not Specified'
+  if (item._raw) {
+    item._raw.expert_note_summary = normalizedSummary
+    item._raw.expert_note_count = normalizedSummary.note_count
+    if (item._raw.record) {
+      item._raw.record.expert_note_summary = normalizedSummary
+      item._raw.record.expert_note_count = normalizedSummary.note_count
+    }
+  }
+}
+
+async function handleDiscrepancyReviewUpdated() {
+  await Promise.all([fetchQueue(), fetchSummary()])
+}
+
+function rowId(item) {
+  return item?.['PDB Code'] || ''
+}
+
+function isExpanded(item) {
+  return expandedRows.value.includes(rowId(item))
+}
+
+function toggleExpanded(item) {
+  const id = rowId(item)
+  if (!id) return
+  if (isExpanded(item)) {
+    expandedRows.value = expandedRows.value.filter((value) => value !== id)
+    return
+  }
+  expandedRows.value = [...expandedRows.value, id]
+}
+
+const debouncedQueueSearch = debounce(async () => {
+  page.value = 1
+  await loadDiscrepancyQueue()
+}, 300)
 
 function convertToTitleCase(str) {
   return str
@@ -101,18 +344,28 @@ function convertToTitleCase(str) {
     .replace(/\b\w/g, (match) => match.toUpperCase())
 }
 
-const fetchCharts = debounce(async () => {
+function getEffectiveChartWidth() {
+  const measuredWidth = Number(chart_width.value?.clientWidth || width.value || 0)
+  if (Number.isFinite(measuredWidth) && measuredWidth > 320) {
+    return Math.round(measuredWidth)
+  }
+  return 960
+}
+
+const requestCharts = async () => {
   try {
     if (features.value.length == 1) {
       alert('You must select more than one variable or leave it empty.')
       return
     }
+    const chartWidth = getEffectiveChartWidth()
+    width.value = chartWidth
     const data = {
       use_case: useCases.value,
       category: category.value,
       features: features.value,
       chart_type: chart_type.value,
-      chart_width: width.value,
+      chart_width: chartWidth,
       chart_trend: chart_trend.value,
       outlier_detection_by_method: outlier_detection_by_method.value,
       outlier_detection_algorithm: outlier_detection_algorithm.value
@@ -128,13 +381,86 @@ const fetchCharts = debounce(async () => {
       confirmButtonText: 'OK'
     })
   }
-}, 300) // Debounce by 300ms
+}
+
+const fetchCharts = debounce(requestCharts, 300)
 
 const get_features = computed(() => {
   const data = casesStore.use_cases_data.data?.data
   if (!data) return []
   return outlier_detection_by_method.value === 'EM' ? data.em_features : data.x_ray_features
 })
+
+function getDefaultFeatures(method) {
+  if (method === 'EM') {
+    return [
+      'emt_molecular_weight',
+      'reconstruction_num_particles',
+      'processed_resolution'
+    ]
+  }
+
+  return ['cell_length_a', 'cell_length_b', 'cell_length_c']
+}
+
+function setUseCaseDefaults(targetUseCase, options = {}) {
+  const { preserveExisting = false } = options
+
+  if (targetUseCase === 'summary_statistics') {
+    category.value = preserveExisting && category.value ? category.value : 'group'
+    chart_type.value = preserveExisting && chart_type.value ? chart_type.value : 'bar'
+    chart_trend.value = preserveExisting && chart_trend.value ? chart_trend.value : 'No'
+    return
+  }
+
+  if (targetUseCase === 'outlier_detection') {
+    const method = preserveExisting && outlier_detection_by_method.value
+      ? outlier_detection_by_method.value
+      : 'X-ray'
+
+    outlier_detection_by_method.value = method
+    outlier_detection_algorithm.value = preserveExisting && outlier_detection_algorithm.value
+      ? outlier_detection_algorithm.value
+      : 'DBSCAN'
+
+    if (!preserveExisting || !Array.isArray(features.value) || !features.value.length) {
+      features.value = getDefaultFeatures(method)
+    }
+    return
+  }
+
+  if (targetUseCase === 'discrepancies') {
+    chart_type.value = 'line'
+    chart_trend.value = 'Yes'
+  }
+}
+
+async function initializeCurrentUseCase(newView, options = {}) {
+  const { preserveExisting = false } = options
+
+  view.value = newView
+  width.value = chart_width.value?.clientWidth || width.value || 800
+
+  if (view.value && view.value !== 'summary_statistics') {
+    useCases.value = view.value
+    page_title.value = `${view.value} view`
+  } else {
+    useCases.value = 'summary_statistics'
+    page_title.value = 'summary_statistics view'
+  }
+
+  setUseCaseDefaults(useCases.value, { preserveExisting })
+  page_title.value = formatString(page_title.value)
+
+  await nextTick()
+  updateWidth()
+  await requestCharts()
+
+  if (useCases.value === 'discrepancies') {
+    page.value = 1
+    await loadDiscrepancyQueue()
+  }
+}
 
 function formatString(input) {
   return input
@@ -157,62 +483,70 @@ watch(
 watch(
   useCases,
   (new_use_cases) => {
-    if (new_use_cases == 'outlier_detection') {
-      outlier_detection_algorithm.value = 'DBSCAN'
-      outlier_detection_by_method.value = 'X-ray'
+    if (new_use_cases === 'outlier_detection') {
+      setUseCaseDefaults('outlier_detection', { preserveExisting: true })
     }
   },
   { deep: true }
 )
 
 watch(
-  () => router.currentRoute.value.params?.view,
-  (newView) => {
-    view.value = newView
-    page_title.value = 'summary_statistics' + ' view'
-    if (view.value != '' && view.value != 'summary_statistics') {
-      useCases.value = view.value
-      page_title.value = view.value + ' view'
-    } else {
-      useCases.value = 'summary_statistics'
-      category.value = 'group'
-      chart_type.value = 'bar'
-      chart_trend.value = 'No'
+  outlier_detection_by_method,
+  (newMethod, previousMethod) => {
+    if (useCases.value !== 'outlier_detection' || !newMethod) return
+
+    if (!Array.isArray(features.value) || !features.value.length || newMethod !== previousMethod) {
+      features.value = getDefaultFeatures(newMethod)
     }
-    page_title.value = formatString(page_title.value)
-    fetchCharts()
-    console.log('View updated to:', newView)
   }
 )
 
-onMounted(() => {
-  casesStore.loadUseCases()
-
-  const updateWidth = () => {
-    if (chart_width.value) {
-      width.value = chart_width.value.clientWidth
-    }
+watch(
+  () => router.currentRoute.value.params?.view,
+  async (newView) => {
+    await initializeCurrentUseCase(newView, { preserveExisting: false })
   }
+)
 
+watch(page, async () => {
+  if (useCases.value === 'discrepancies') {
+    await loadDiscrepancyQueue()
+  }
+})
+
+watch(perPage, async () => {
+  if (useCases.value === 'discrepancies') {
+    page.value = 1
+    await loadDiscrepancyQueue()
+  }
+})
+
+watch(search, () => {
+  if (useCases.value === 'discrepancies') {
+    debouncedQueueSearch()
+  }
+})
+
+const updateWidth = () => {
+  const nextWidth = getEffectiveChartWidth()
+  const changed = nextWidth !== width.value
+  width.value = nextWidth
+  return changed
+}
+
+onMounted(async () => {
+  await casesStore.loadUseCases()
   updateWidth()
   window.addEventListener('resize', updateWidth)
+  await nextTick()
 
-  onUnmounted(() => {
-    window.removeEventListener('resize', updateWidth)
-  })
-  page_title.value = 'summary_statistics' + ' view'
-  if (view.value != '' && view.value != 'summary_statistics') {
-    useCases.value = view.value
-    page_title.value = view.value + ' view'
-  } else {
-    useCases.value = 'summary_statistics'
-    category.value = 'group'
-    chart_type.value = 'bar'
-    chart_trend.value = 'No'
-  }
-  page_title.value = formatString(page_title.value)
-  fetchCharts()
-  loadingData()
+  await initializeCurrentUseCase(view.value, { preserveExisting: false })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateWidth)
+  debouncedQueueSearch.cancel()
+  fetchCharts.cancel()
 })
 </script>
 
@@ -345,23 +679,64 @@ onMounted(() => {
                 <div v-if="useCases === 'discrepancies'">
                   <v-card>
                     <v-card-title>Membrane Protein Records</v-card-title>
-
-                    <v-spacer />
+                    <div class="px-4 pb-3" v-if="benchmarkStatus">
+                      <p class="mb-2 benchmark-summary">
+                        Latest benchmark release:
+                        <strong>{{ formattedBenchmarkRelease }}</strong>
+                        with
+                        <strong>{{ benchmarkStatus.row_count }}</strong>
+                        rows and
+                        <strong>{{ benchmarkStatus.high_confidence_row_count }}</strong>
+                        high-confidence records.
+                      </p>
+                      <p
+                        v-if="
+                          benchmarkStatus.min_bibliography_year &&
+                          benchmarkStatus.max_bibliography_year
+                        "
+                        class="mb-2 benchmark-summary benchmark-coverage"
+                      >
+                        Expert-reviewed discrepancy benchmark coverage:
+                        <strong>
+                          {{ benchmarkStatus.min_bibliography_year }}-{{ benchmarkStatus.max_bibliography_year }}
+                        </strong>
+                      </p>
+                    </div>
+                    <div class="queue-toolbar">
                       <v-text-field
                         v-model="search"
                         append-icon="mdi-magnify"
-                        label="Search"
+                        label="Search by PDB, UniProt, group, species, or title"
                         single-line
                         hide-details
-                        class="mx-4"
+                        class="queue-search"
                       />
+                      <div class="download-actions">
+                        <button class="btn btn-outline-primary btn-sm" :disabled="!!exportingFormat" @click="exportDiscrepancyTable('json')">
+                          JSON
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" :disabled="!!exportingFormat" @click="exportDiscrepancyTable('csv')">
+                          CSV
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" :disabled="!!exportingFormat" @click="exportDiscrepancyTable('xlsx')">
+                          Excel
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" :disabled="!!exportingFormat" @click="exportDiscrepancyTable('tsv')">
+                          TSV
+                        </button>
+                      </div>
+                    </div>
+                    <div class="queue-meta px-4 pb-3">
+                      Showing <strong>{{ rows.length }}</strong> of
+                      <strong>{{ queuePagination.total_items }}</strong> matching records.
+                    </div>
                     <v-data-table
                       :headers="headers"
                       :items="rows"
-                      :search="search"
                       :loading="loading"
                       class="elevation-1"
-                      :items-per-page="10"
+                      :items-per-page="perPage"
+                      hide-default-footer
                     >
                       <template #no-data>
                         <v-alert type="info" border="left" colored-border>
@@ -369,24 +744,192 @@ onMounted(() => {
                         </v-alert>
                       </template>
                       <!-- Override each row -->
-                      <template #item="{ item, index, columns }">
+                      <template #item="{ item, columns }">
                         <tr
-                          :class="{ 'highlight-row': 
-                            parseExpert(item['TM (Expert)']) !== item.DeepTMHMM_tm_count ||
-                            parseExpert(item['TM (Expert)']) !== item.TMbed_tm_count
-                          }"
+                          :class="{ 'highlight-row': item._highlight }"
+                          class="queue-row"
+                          @click="toggleExpanded(item)"
                         >
                           <td
                             v-for="col in columns"
                             :key="col.key"
                           >
-                            {{ item[col.key] }}
+                            <template v-if="col.key === 'actions'">
+                              <button class="btn btn-sm btn-outline-secondary" @click.stop="openRecord(item)">
+                                Open
+                              </button>
+                            </template>
+                            <template v-else-if="col.key === 'details'">
+                              <div class="details-toggle">
+                                <span>{{ isExpanded(item) ? 'Hide' : 'View' }}</span>
+                                <v-icon size="18">
+                                  {{ isExpanded(item) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+                                </v-icon>
+                              </div>
+                            </template>
+                            <template v-else-if="col.key === 'benchmark_status'">
+                              <v-chip
+                                size="small"
+                                :color="benchmarkStatusChipColor(item)"
+                                variant="flat"
+                              >
+                                {{ getColumnValue(item, col) }}
+                              </v-chip>
+                            </template>
+                            <template v-else-if="isScientificConfidenceColumn(col)">
+                              <v-chip
+                                size="small"
+                                :color="scientificConfidenceChipColor(item)"
+                                variant="flat"
+                              >
+                                {{ getColumnValue(item, col) }}
+                              </v-chip>
+                            </template>
+                            <template v-else-if="col.key === 'expert_notes' || col.value === 'expert_notes'">
+                              <StructureExpertNotesDialog
+                                :pdb-code="item['PDB Code']"
+                                :initial-count="item.expert_note_count"
+                                :summary="item._raw?.expert_note_summary || item._raw?.record?.expert_note_summary"
+                                source-context="use_cases_index_queue"
+                                @updated="handleExpertNotesUpdated(item, $event)"
+                              />
+                            </template>
+                            <template v-else-if="col.key === 'review_action' || col.value === 'review_action'">
+                              <DiscrepancyReviewDialog
+                                :pdb-code="item['PDB Code']"
+                                :initial-review="item._raw?.review || item._raw?.record?.discrepancy_review || {}"
+                                trigger-mode="button"
+                                trigger-label="Review"
+                                @updated="handleDiscrepancyReviewUpdated"
+                              />
+                            </template>
+                            <template v-else>
+                              <template v-if="isBooleanChipColumn(col)">
+                                <v-chip
+                                  size="small"
+                                  :color="chipColorForBooleanLabel(getColumnValue(item, col))"
+                                  :variant="chipVariantForBooleanLabel(getColumnValue(item, col))"
+                                >
+                                  {{ getColumnValue(item, col) }}
+                                </v-chip>
+                              </template>
+                              <template v-else>
+                                {{ getColumnValue(item, col) }}
+                              </template>
+                            </template>
+                          </td>
+                        </tr>
+                        <tr v-if="isExpanded(item)" class="detail-row">
+                          <td :colspan="columns.length" class="detail-cell">
+                            <div class="detail-layout">
+                              <div class="detail-section">
+                                <div class="detail-section__title">Decision Notes</div>
+                                <div class="decision-note-inline">
+                                  <span class="decision-note-preview">
+                                    {{ shortenDecisionNotes(item.benchmark_reason, 180) }}
+                                  </span>
+                                  <button
+                                    v-if="item.benchmark_reason && item.benchmark_reason !== 'Not Specified'"
+                                    class="btn btn-link btn-sm decision-note-button"
+                                    @click.stop="openDecisionNotes(item)"
+                                  >
+                                    View Full Note
+                                  </button>
+                                </div>
+                              </div>
+                              <div class="detail-section">
+                                <div class="detail-section__title">Expert Notes</div>
+                                <div class="decision-note-inline">
+                                  <span class="decision-note-preview">
+                                    {{ shortenDecisionNotes(item.latest_expert_note_excerpt, 180) }}
+                                  </span>
+                                  <StructureExpertNotesDialog
+                                    :pdb-code="item['PDB Code']"
+                                    :initial-count="item.expert_note_count"
+                                    :summary="item._raw?.expert_note_summary || item._raw?.record?.expert_note_summary"
+                                    trigger-mode="button"
+                                    trigger-label="Open Notes"
+                                    source-context="use_cases_index_expanded"
+                                    @updated="handleExpertNotesUpdated(item, $event)"
+                                  />
+                                </div>
+                              </div>
+                              <div class="detail-grid">
+                                <div
+                                  v-for="field in detailFields"
+                                  :key="field.value"
+                                  class="detail-card"
+                                >
+                                  <div class="detail-card__label">{{ field.title }}</div>
+                                  <div class="detail-card__value">
+                                    <template v-if="isBooleanChipColumn(field)">
+                                      <v-chip
+                                        size="small"
+                                        :color="chipColorForBooleanLabel(getColumnValue(item, field))"
+                                        :variant="chipVariantForBooleanLabel(getColumnValue(item, field))"
+                                      >
+                                        {{ getColumnValue(item, field) }}
+                                      </v-chip>
+                                    </template>
+                                    <template v-else-if="isScientificConfidenceColumn(field)">
+                                      <v-chip
+                                        size="small"
+                                        :color="scientificConfidenceChipColor(item)"
+                                        variant="flat"
+                                      >
+                                        {{ getColumnValue(item, field) }}
+                                      </v-chip>
+                                    </template>
+                                    <template v-else>
+                                      {{ getColumnValue(item, field) }}
+                                    </template>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       </template>
                     </v-data-table>
+                    <div class="queue-footer">
+                      <div class="queue-page-size">
+                        <label for="discrepancy-page-size" class="form-label mb-1">Rows per page</label>
+                        <select id="discrepancy-page-size" v-model.number="perPage" class="form-select form-select-sm">
+                          <option :value="10">10</option>
+                          <option :value="25">25</option>
+                          <option :value="50">50</option>
+                          <option :value="100">100</option>
+                        </select>
+                      </div>
+                      <v-pagination
+                        v-model="page"
+                        :length="queuePagination.total_pages"
+                        :total-visible="7"
+                      />
+                    </div>
                   </v-card>
                 </div>
+
+                <v-dialog v-model="decisionNotesDialog" max-width="760">
+                  <v-card>
+                    <v-card-title class="text-h6">
+                      Decision Notes
+                      <span v-if="activeDecisionPdb" class="decision-note-code">
+                        {{ activeDecisionPdb }}
+                      </span>
+                    </v-card-title>
+                    <v-card-text>
+                      <div class="decision-note-full">
+                        {{ activeDecisionNotes }}
+                      </div>
+                    </v-card-text>
+                    <v-card-actions class="justify-end">
+                      <button class="btn btn-primary btn-sm" @click="decisionNotesDialog = false">
+                        Close
+                      </button>
+                    </v-card-actions>
+                  </v-card>
+                </v-dialog>
               </div>
             </div>
           </div>
@@ -410,5 +953,120 @@ canvas#display-canvas {
 }
 .highlight-row {
   background-color: rgba(255, 193, 7, 0.1);
+}
+.queue-row {
+  cursor: pointer;
+}
+.download-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.queue-toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 1rem 1rem;
+  flex-wrap: wrap;
+}
+.queue-search {
+  min-width: 320px;
+  flex: 1 1 420px;
+}
+.queue-meta {
+  color: #516072;
+  font-size: 0.92rem;
+}
+.queue-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  flex-wrap: wrap;
+}
+.queue-page-size {
+  width: 140px;
+}
+.benchmark-summary {
+  font-size: 0.95rem;
+}
+.benchmark-coverage {
+  color: #6c757d;
+}
+.details-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #0f4c81;
+  font-weight: 600;
+}
+.detail-row {
+  background: rgba(15, 76, 129, 0.03);
+}
+.detail-cell {
+  padding: 0 !important;
+}
+.detail-layout {
+  padding: 1rem 1.25rem 1.25rem;
+}
+.detail-section {
+  margin-bottom: 1rem;
+}
+.detail-section__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #516072;
+  margin-bottom: 0.45rem;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.85rem;
+}
+.detail-card {
+  padding: 0.8rem 0.9rem;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(15, 76, 129, 0.08);
+}
+.detail-card__label {
+  font-size: 0.8rem;
+  color: #6b7a8a;
+  margin-bottom: 0.35rem;
+}
+.detail-card__value {
+  color: #213547;
+  font-weight: 500;
+  word-break: break-word;
+}
+.decision-note-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.decision-note-preview {
+  color: #516072;
+  display: inline-block;
+  max-width: 100%;
+}
+.decision-note-button {
+  padding: 0;
+  white-space: nowrap;
+}
+.decision-note-full {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #314154;
+}
+.decision-note-code {
+  margin-left: 0.5rem;
+  color: #6c757d;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 </style>
