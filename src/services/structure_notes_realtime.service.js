@@ -89,7 +89,8 @@ function ensureSocket() {
   activeToken = token
   socket = io(`${resolveSocketBaseUrl()}${STRUCTURE_NOTES_NAMESPACE}`, {
     path: import.meta.env.VITE_MPV_SOCKET_PATH || '/socket.io',
-    transports: ['websocket'],
+    transports: ['polling'],
+    upgrade: false,
     autoConnect: true,
     reconnection: true,
     reconnectionDelay: 1000,

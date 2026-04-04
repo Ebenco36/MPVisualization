@@ -62,7 +62,14 @@
                   <p class="section-eyebrow mb-1">Growth</p>
                   <!-- <h2 class="section-title">Update trend</h2> -->
                 </div>
-                <GraphView id="trends_by_database_year" :summary="aboutPayload?.trends_by_database_year" />
+                
+                <div v-if="aboutStore?.about_data?.loader_status" class="about-chart-state text-muted">
+                  Loading chart...
+                </div>
+                <div v-else-if="hasTrendChart" ref="trendChartRoot" class="about-chart-surface"></div>
+                <div v-else class="about-chart-state text-muted">
+                  No chart data is available yet.
+                </div>
               </div>
             </div>
           </div>
@@ -73,18 +80,100 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import GraphView from '@/components/dashboard/GraphView.vue'
+import { computed, nextTick, onMounted, ref, toRaw, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import embed from 'vega-embed'
 import { useAboutStore } from '@/stores/about.js'
 import numeral from 'numeral'
 
 const aboutStore = useAboutStore()
+const route = useRoute()
+const trendChartRoot = ref(null)
 
 const aboutPayload = computed(() => aboutStore?.about_data?.data || {})
 const summaryRows = computed(() => aboutStore?.about_data?.summary?.rows || [])
+const trendChartSpec = computed(() => aboutPayload.value?.trends_by_database_year || null)
+const hasTrendChart = computed(() => {
+  const chart = trendChartSpec.value
+  return Boolean(chart && typeof chart === 'object' && Object.keys(chart).length)
+})
 
-onMounted(() => {
-  aboutStore?.loadAboutPage()
+function cloneSerializableChartSpec(spec) {
+  return JSON.parse(JSON.stringify(toRaw(spec)))
+}
+
+async function renderTrendChart(chartSpec) {
+  if (!chartSpec || !trendChartRoot.value) {
+    return
+  }
+
+  const renderedSpec = cloneSerializableChartSpec(chartSpec)
+  if (renderedSpec.layer) {
+    renderedSpec.layer.forEach((layer) => {
+      layer.title = null
+    })
+  } else if (renderedSpec.vconcat) {
+    renderedSpec.vconcat.forEach((panel) => {
+      panel.title = null
+    })
+  } else if (renderedSpec.marks) {
+    renderedSpec.marks.forEach((mark) => {
+      if (mark && typeof mark === 'object') {
+        mark.title = null
+      }
+    })
+  } else {
+    renderedSpec.title = null
+  }
+
+  await nextTick()
+  if (!trendChartRoot.value) {
+    return
+  }
+  trendChartRoot.value.innerHTML = ''
+  await embed(trendChartRoot.value, renderedSpec, { actions: true })
+}
+
+async function loadPage() {
+  await aboutStore?.loadAboutPage()
+}
+
+watch(
+  () => route.fullPath,
+  async (path) => {
+    if (path === '/metamp-about') {
+      await loadPage()
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  [trendChartSpec, trendChartRoot, hasTrendChart],
+  async ([chartSpec, chartRoot, shouldRender]) => {
+    if (!chartSpec || !chartRoot || !shouldRender) {
+      return
+    }
+    try {
+      await renderTrendChart(chartSpec)
+    } catch (error) {
+      console.error('Failed to render About MetaMP trend chart', error)
+    }
+  },
+  { deep: true, immediate: true, flush: 'post' }
+)
+
+onMounted(async () => {
+  if (route.fullPath === '/metamp-about' && !summaryRows.value.length && !hasTrendChart.value) {
+    await loadPage()
+  }
+  if (trendChartSpec.value && trendChartRoot.value) {
+    try {
+      await renderTrendChart(trendChartSpec.value)
+    } catch (error) {
+      console.error('Failed to render About MetaMP trend chart on mount', error)
+    }
+  }
 })
 </script>
 
@@ -151,5 +240,17 @@ onMounted(() => {
 
 .table-row-highlight {
   --bs-table-bg: rgba(18, 57, 91, 0.05);
+}
+
+.about-chart-surface {
+  min-height: 320px;
+  width: 100%;
+}
+
+.about-chart-state {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
