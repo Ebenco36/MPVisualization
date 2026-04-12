@@ -242,10 +242,17 @@ const fetchSuggestions = async (searchTerm) => {
 };
 
 // Handle selection and log selected item
+const normalizePdbCode = (value) => {
+    const text = String(value || '').trim().toUpperCase()
+    return text || null
+}
+
 const handleSelection = (selectedItem) => {
-    // router.push(`/details/${item.pdb_code}`)
-    // window.open(`/#/details/${selectedItem.pdb_code}`, '_blank');
-    router.push({ path: '/details-2', query: { code: selectedItem.pdb_code, type: 'pdb' } });
+    const canonicalCode = normalizePdbCode(
+        selectedItem?.canonical_pdb_code || selectedItem?.replacement_pdb_code || selectedItem?.pdb_code
+    )
+    if (!canonicalCode) return
+    router.push({ path: '/details-2', query: { code: canonicalCode, type: 'pdb' } });
 };
 
 function gotoDashboard() {

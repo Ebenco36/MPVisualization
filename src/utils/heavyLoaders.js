@@ -293,6 +293,9 @@ export async function get3DMol() {
 
 
 let tmMolstarPromise = null
+const PDBTM_VENDOR_BASE = import.meta.env.DEV
+  ? '/pdbtm/vendor/pdbtm'
+  : 'https://pdbtm.unitmp.org/vendor/pdbtm'
 
 function patchCrossOriginStyleSheets() {
   const proto = CSSStyleSheet.prototype
@@ -369,8 +372,8 @@ export function loadTmMolstar() {
     if (window.tm_molstar?.Viewer) return resolve(window.tm_molstar)
 
     Promise.all([
-      injectStylesheet('/pdbtm/vendor/pdbtm/css/molstar.css'),
-      injectStylesheet('/pdbtm/vendor/pdbtm/css/molstar_viewer.css'),
+      injectStylesheet(`${PDBTM_VENDOR_BASE}/css/molstar.css`),
+      injectStylesheet(`${PDBTM_VENDOR_BASE}/css/molstar_viewer.css`),
     ]).then(() => {
       // 1. Inject ult_* color classes BEFORE the script runs
       injectTmColors()
@@ -380,12 +383,12 @@ export function loadTmMolstar() {
 
       // 3. Load the bundle
       const s   = document.createElement('script')
-      s.src     = '/pdbtm/vendor/pdbtm/js/tm_molstar.js'
+      s.src     = `${PDBTM_VENDOR_BASE}/js/tm_molstar.js`
       s.onload  = () => {
         if (window.tm_molstar?.Viewer) resolve(window.tm_molstar)
         else reject(new Error('tm_molstar loaded but window.tm_molstar.Viewer not found'))
       }
-      s.onerror = () => reject(new Error('Failed to load /pdbtm/vendor/pdbtm/js/tm_molstar.js'))
+      s.onerror = () => reject(new Error(`Failed to load ${PDBTM_VENDOR_BASE}/js/tm_molstar.js`))
       document.head.appendChild(s)
     })
   })

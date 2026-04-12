@@ -91,11 +91,15 @@ const LEGEND = [
 
 // ─── URL helpers ─────────────────────────────────────────────────────────────
 
+const PDBTM_API_BASE = import.meta.env.DEV
+  ? '/pdbtm/api/v1'
+  : 'https://pdbtm.unitmp.org/api/v1'
+
 function resolveUrls(pdbId) {
   const id = pdbId.toLowerCase()
   return {
-    tmStructureUrl:      `/pdbtm/api/v1/entry/${id}.updated.cif`,
-    regionDescriptorUrl: `/pdbtm/api/v1/entry/${id}.json`,
+    tmStructureUrl:      `${PDBTM_API_BASE}/entry/${id}.updated.cif`,
+    regionDescriptorUrl: `${PDBTM_API_BASE}/entry/${id}.json`,
   }
 }
 

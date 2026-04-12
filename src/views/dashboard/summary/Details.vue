@@ -181,14 +181,28 @@ function generateQueryString(queryParams) {
 }
 
 
+function normalizeSummaryTitle(text = '') {
+  return String(text)
+    .replace(/^By selected Polymer Entity Types$/i, 'By polymer entity type')
+    .replace(/^By resolution range$/i, 'By resolution')
+}
+
 function checkType(variable) {
   if (typeof variable === 'string') {
+    return normalizeSummaryTitle(variable)
+  } else if (Array.isArray(variable)) {
     return variable
-  } else if (typeof variable === 'object' && !Array.isArray(variable) && variable !== null) {
-    if (variable.text && typeof variable.text == "object") {
-      return variable?.text?.join(" ")
+      .filter((item) => typeof item === 'string' && item.trim())
+      .map((item) => normalizeSummaryTitle(item))
+      .join(' — ')
+  } else if (typeof variable === 'object' && variable !== null) {
+    if (Array.isArray(variable.text)) {
+      return variable.text
+        .filter((item) => typeof item === 'string' && item.trim())
+        .map((item) => normalizeSummaryTitle(item))
+        .join(' — ')
     }
-    return variable?.text
+    return normalizeSummaryTitle(variable?.text)
   } else {
     return variable
   }

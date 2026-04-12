@@ -287,7 +287,11 @@
     },
     methods: {
         viewItem(item) {
-            this.$router.push({ path: '/details-2', query: { code: item.pdb_code, type: 'pdb' } })
+            const canonicalCode = this.normalizePdbCode(
+                item?.canonical_pdb_code || item?.replacement_pdb_code || item?.pdb_code
+            )
+            if (!canonicalCode) return
+            this.$router.push({ path: '/details-2', query: { code: canonicalCode, type: 'pdb' } })
         },
         transformValues(values) {
             return values.map((item) => {

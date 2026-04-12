@@ -55,6 +55,36 @@ const textClasses = computed(() => (
   use_card.value ? 'text-muted text-center' : 'text-muted'
 ))
 
+function normalizeChartTitle(value) {
+  const normalizeText = (text) => String(text)
+    .replace(/^By selected Polymer Entity Types$/i, 'By polymer entity type')
+    .replace(/^By resolution range$/i, 'By resolution')
+
+  if (Array.isArray(value)) {
+    return value.map((item) => typeof item === 'string' ? normalizeText(item) : item)
+  }
+
+  if (typeof value === 'string') {
+    return normalizeText(value)
+  }
+
+  if (value && typeof value === 'object' && Array.isArray(value.text)) {
+    return {
+      ...value,
+      text: value.text.map((item) => typeof item === 'string' ? normalizeText(item) : item)
+    }
+  }
+
+  if (value && typeof value === 'object' && typeof value.text === 'string') {
+    return {
+      ...value,
+      text: normalizeText(value.text)
+    }
+  }
+
+  return value
+}
+
 function getChartTitle(nextSummary) {
   let detectedTitle = nextSummary.title
 
@@ -99,7 +129,7 @@ setTimeout(() => {
       return
     }
 
-    title.value = getChartTitle(summary.value)
+    title.value = normalizeChartTitle(getChartTitle(summary.value))
     await nextTick()
     await embed(chartRoot.value, stripChartTitles(summary.value), { actions: true })
   })

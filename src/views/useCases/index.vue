@@ -14,8 +14,11 @@ import StructureNotesRealtimeService from '@/services/structure_notes_realtime.s
 import {
   basicPredictorCountColumns,
   buildDiscrepancyRow,
+  discrepancyDecisionFields,
   downloadExportResponse,
-  getColumnValue
+  getColumnValue,
+  getDecisionTooltip,
+  hasDecisionTooltip
 } from '@/utils/discrepancyQueue'
 
 const router = useRouter()
@@ -46,17 +49,7 @@ const headers = [
   { title: 'Actions', value: 'actions', sortable: false }
 ]
 
-const detailFields = [
-  { title: 'Group (OPM)', value: 'Group (OPM)' },
-  { title: 'Group (MPstruc)', value: 'Group (MPstruc)' },
-  { title: 'Group (Predicted)', value: 'Group (Predicted)' },
-  ...basicPredictorCountColumns,
-  { title: 'Confidence', value: 'scientific_confidence' },
-  { title: 'Context-dependent Topology', value: 'context_dependent_topology' },
-  { title: 'Non-canonical Membrane Case', value: 'non_canonical_membrane_case' },
-  { title: 'Multichain Context', value: 'multichain_context' },
-  { title: 'Obsolete or Replaced', value: 'obsolete_or_replaced' }
-]
+const detailFields = discrepancyDecisionFields
 
 // Reactive state
 const rows = ref([])
@@ -145,8 +138,20 @@ const formattedBenchmarkRelease = computed(() => {
   return format(utcDate, 'MMM d, yyyy HH:mm') + ' UTC'
 })
 
+const normalizePdbCode = (value) => {
+  const text = String(value || '').trim().toUpperCase()
+  return text || null
+}
+
 const openRecord = (item) => {
-  const pdbCode = item?._raw?.pdb_code || item?.['PDB Code']
+  const pdbCode = normalizePdbCode(
+    item?._raw?.record?.canonical_pdb_code ||
+    item?._raw?.record?.replacement_pdb_code ||
+    item?._raw?.canonical_pdb_code ||
+    item?._raw?.replacement_pdb_code ||
+    item?._raw?.pdb_code ||
+    item?.['PDB Code']
+  )
   if (!pdbCode) return
   window.open(`/#/details-2?code=${encodeURIComponent(pdbCode)}&type=pdb`, '_blank')
 }
@@ -218,6 +223,10 @@ function benchmarkStatusChipColor(item) {
   }
 }
 
+function tooltipText(item, column) {
+  return getDecisionTooltip(item, column)
+}
+
 function scientificConfidenceChipColor(item) {
   switch (item?.scientific_confidence_code) {
     case 'high':
@@ -246,11 +255,6 @@ function openDecisionNotes(item) {
   decisionNotesDialog.value = true
 }
 
-
-function normalizePdbCode(value) {
-  const text = String(value || '').trim().toUpperCase()
-  return text || null
-}
 
 function itemMatchesStructureNoteUpdate(item, payload) {
   const candidateCodes = [
@@ -768,7 +772,26 @@ onUnmounted(() => {
                               </div>
                             </template>
                             <template v-else-if="col.key === 'benchmark_status'">
+                              <v-tooltip
+                                v-if="hasDecisionTooltip(col)"
+                                location="top"
+                                max-width="420"
+                              >
+                                <template #activator="{ props }">
+                                  <span v-bind="props" class="tooltip-activator">
+                                    <v-chip
+                                      size="small"
+                                      :color="benchmarkStatusChipColor(item)"
+                                      variant="flat"
+                                    >
+                                      {{ getColumnValue(item, col) }}
+                                    </v-chip>
+                                  </span>
+                                </template>
+                                <div class="decision-tooltip">{{ tooltipText(item, col) }}</div>
+                              </v-tooltip>
                               <v-chip
+                                v-else
                                 size="small"
                                 :color="benchmarkStatusChipColor(item)"
                                 variant="flat"
@@ -777,7 +800,26 @@ onUnmounted(() => {
                               </v-chip>
                             </template>
                             <template v-else-if="isScientificConfidenceColumn(col)">
+                              <v-tooltip
+                                v-if="hasDecisionTooltip(col)"
+                                location="top"
+                                max-width="420"
+                              >
+                                <template #activator="{ props }">
+                                  <span v-bind="props" class="tooltip-activator">
+                                    <v-chip
+                                      size="small"
+                                      :color="scientificConfidenceChipColor(item)"
+                                      variant="flat"
+                                    >
+                                      {{ getColumnValue(item, col) }}
+                                    </v-chip>
+                                  </span>
+                                </template>
+                                <div class="decision-tooltip">{{ tooltipText(item, col) }}</div>
+                              </v-tooltip>
                               <v-chip
+                                v-else
                                 size="small"
                                 :color="scientificConfidenceChipColor(item)"
                                 variant="flat"
@@ -805,7 +847,26 @@ onUnmounted(() => {
                             </template>
                             <template v-else>
                               <template v-if="isBooleanChipColumn(col)">
+                                <v-tooltip
+                                  v-if="hasDecisionTooltip(col)"
+                                  location="top"
+                                  max-width="420"
+                                >
+                                  <template #activator="{ props }">
+                                    <span v-bind="props" class="tooltip-activator">
+                                      <v-chip
+                                        size="small"
+                                        :color="chipColorForBooleanLabel(getColumnValue(item, col))"
+                                        :variant="chipVariantForBooleanLabel(getColumnValue(item, col))"
+                                      >
+                                        {{ getColumnValue(item, col) }}
+                                      </v-chip>
+                                    </span>
+                                  </template>
+                                  <div class="decision-tooltip">{{ tooltipText(item, col) }}</div>
+                                </v-tooltip>
                                 <v-chip
+                                  v-else
                                   size="small"
                                   :color="chipColorForBooleanLabel(getColumnValue(item, col))"
                                   :variant="chipVariantForBooleanLabel(getColumnValue(item, col))"
@@ -854,36 +915,135 @@ onUnmounted(() => {
                                   />
                                 </div>
                               </div>
-                              <div class="detail-grid">
-                                <div
-                                  v-for="field in detailFields"
-                                  :key="field.value"
-                                  class="detail-card"
-                                >
-                                  <div class="detail-card__label">{{ field.title }}</div>
-                                  <div class="detail-card__value">
-                                    <template v-if="isBooleanChipColumn(field)">
-                                      <v-chip
-                                        size="small"
-                                        :color="chipColorForBooleanLabel(getColumnValue(item, field))"
-                                        :variant="chipVariantForBooleanLabel(getColumnValue(item, field))"
-                                      >
+                              <div class="detail-section">
+                                <div class="detail-section__title">Decision Signals</div>
+                                <div class="detail-grid">
+                                  <div
+                                    v-for="field in detailFields"
+                                    :key="field.value"
+                                    class="detail-card"
+                                  >
+                                    <div class="detail-card__label">{{ field.title }}</div>
+                                    <div class="detail-card__value">
+                                      <template v-if="field.value === 'benchmark_status'">
+                                        <v-tooltip
+                                          v-if="hasDecisionTooltip(field)"
+                                          location="top"
+                                          max-width="420"
+                                        >
+                                          <template #activator="{ props }">
+                                            <span v-bind="props" class="tooltip-activator">
+                                              <v-chip
+                                                size="small"
+                                                :color="benchmarkStatusChipColor(item)"
+                                                variant="flat"
+                                              >
+                                                {{ getColumnValue(item, field) }}
+                                              </v-chip>
+                                            </span>
+                                          </template>
+                                          <div class="decision-tooltip">{{ tooltipText(item, field) }}</div>
+                                        </v-tooltip>
+                                        <v-chip
+                                          v-else
+                                          size="small"
+                                          :color="benchmarkStatusChipColor(item)"
+                                          variant="flat"
+                                        >
+                                          {{ getColumnValue(item, field) }}
+                                        </v-chip>
+                                      </template>
+                                      <template v-else-if="isBooleanChipColumn(field)">
+                                        <v-tooltip
+                                          v-if="hasDecisionTooltip(field)"
+                                          location="top"
+                                          max-width="420"
+                                        >
+                                          <template #activator="{ props }">
+                                            <span v-bind="props" class="tooltip-activator">
+                                              <v-chip
+                                                size="small"
+                                                :color="chipColorForBooleanLabel(getColumnValue(item, field))"
+                                                :variant="chipVariantForBooleanLabel(getColumnValue(item, field))"
+                                              >
+                                                {{ getColumnValue(item, field) }}
+                                              </v-chip>
+                                            </span>
+                                          </template>
+                                          <div class="decision-tooltip">{{ tooltipText(item, field) }}</div>
+                                        </v-tooltip>
+                                        <v-chip
+                                          v-else
+                                          size="small"
+                                          :color="chipColorForBooleanLabel(getColumnValue(item, field))"
+                                          :variant="chipVariantForBooleanLabel(getColumnValue(item, field))"
+                                        >
+                                          {{ getColumnValue(item, field) }}
+                                        </v-chip>
+                                      </template>
+                                      <template v-else-if="isScientificConfidenceColumn(field)">
+                                        <v-tooltip
+                                          v-if="hasDecisionTooltip(field)"
+                                          location="top"
+                                          max-width="420"
+                                        >
+                                          <template #activator="{ props }">
+                                            <span v-bind="props" class="tooltip-activator">
+                                              <v-chip
+                                                size="small"
+                                                :color="scientificConfidenceChipColor(item)"
+                                                variant="flat"
+                                              >
+                                                {{ getColumnValue(item, field) }}
+                                              </v-chip>
+                                            </span>
+                                          </template>
+                                          <div class="decision-tooltip">{{ tooltipText(item, field) }}</div>
+                                        </v-tooltip>
+                                        <v-chip
+                                          v-else
+                                          size="small"
+                                          :color="scientificConfidenceChipColor(item)"
+                                          variant="flat"
+                                        >
+                                          {{ getColumnValue(item, field) }}
+                                        </v-chip>
+                                      </template>
+                                      <template v-else>
                                         {{ getColumnValue(item, field) }}
-                                      </v-chip>
-                                    </template>
-                                    <template v-else-if="isScientificConfidenceColumn(field)">
-                                      <v-chip
-                                        size="small"
-                                        :color="scientificConfidenceChipColor(item)"
-                                        variant="flat"
-                                      >
-                                        {{ getColumnValue(item, field) }}
-                                      </v-chip>
-                                    </template>
-                                    <template v-else>
-                                      {{ getColumnValue(item, field) }}
-                                    </template>
+                                      </template>
+                                    </div>
                                   </div>
+                                </div>
+                              </div>
+                              <div class="detail-section">
+                                <div class="detail-section__title">Pipeline Comparison</div>
+                                <div class="comparison-table-wrapper">
+                                  <table class="comparison-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Layer</th>
+                                        <th>Source</th>
+                                        <th>Group</th>
+                                        <th>TM Count</th>
+                                        <th>Segments</th>
+                                        <th>Notes</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr
+                                        v-for="row in item._pipelineComparisonRows"
+                                        :key="`${row.layer}-${row.source}-${row.method}`"
+                                      >
+                                        <td>{{ row.layer }}</td>
+                                        <td>{{ row.source }}</td>
+                                        <td>{{ row.groupLabel || '—' }}</td>
+                                        <td>{{ row.tmCount }}</td>
+                                        <td>{{ row.segmentSummary }}</td>
+                                        <td>{{ row.notes }}</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
                                 </div>
                               </div>
                             </div>
@@ -951,9 +1111,9 @@ canvas#display-canvas {
   background-color: #fee;
   color: #900;
 }
-.highlight-row {
+/* .highlight-row {
   background-color: rgba(255, 193, 7, 0.1);
-}
+} */
 .queue-row {
   cursor: pointer;
 }
@@ -1043,6 +1203,14 @@ canvas#display-canvas {
   font-weight: 500;
   word-break: break-word;
 }
+.tooltip-activator {
+  display: inline-flex;
+}
+.decision-tooltip {
+  white-space: normal;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
 .decision-note-inline {
   display: flex;
   align-items: center;
@@ -1062,6 +1230,32 @@ canvas#display-canvas {
   white-space: pre-wrap;
   line-height: 1.6;
   color: #314154;
+}
+.comparison-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(15, 76, 129, 0.1);
+  border-radius: 16px;
+  background: #fff;
+}
+.comparison-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+}
+.comparison-table th,
+.comparison-table td {
+  padding: 0.85rem 0.9rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(15, 76, 129, 0.08);
+}
+.comparison-table thead th {
+  background: #f4f8fc;
+  color: #4f6378;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .decision-note-code {
   margin-left: 0.5rem;

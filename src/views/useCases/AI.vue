@@ -9,9 +9,12 @@ import DiscrepancyReviewDialog from '@/components/useCases/DiscrepancyReviewDial
 import StructureNotesRealtimeService from '@/services/structure_notes_realtime.service'
 import {
   buildDiscrepancyRow,
+  discrepancyDecisionFields,
   downloadExportResponse,
   extendedPredictorCountColumns,
-  getColumnValue
+  getColumnValue,
+  getDecisionTooltip,
+  hasDecisionTooltip
 } from '@/utils/discrepancyQueue'
 
 const casesStore = useCasesStore()
@@ -43,17 +46,7 @@ const headers = [
   { title: 'Details', value: 'details', sortable: false }
 ]
 
-const detailFields = [
-  { title: 'Group (OPM)', value: 'Group (OPM)' },
-  { title: 'Group (MPstruc)', value: 'Group (MPstruc)' },
-  { title: 'Group (Predicted)', value: 'Group (Predicted)' },
-  ...extendedPredictorCountColumns,
-  { title: 'Confidence', value: 'scientific_confidence' },
-  { title: 'Context-dependent Topology', value: 'context_dependent_topology' },
-  { title: 'Non-canonical Membrane Case', value: 'non_canonical_membrane_case' },
-  { title: 'Multichain Context', value: 'multichain_context' },
-  { title: 'Obsolete or Replaced', value: 'obsolete_or_replaced' }
-]
+const detailFields = discrepancyDecisionFields
 
 const discrepancySummary = computed(() => casesStore.discrepancy_review_summary.data || {})
 const queuePagination = computed(() => casesStore.discrepancy_review_queue.pagination || {
@@ -255,6 +248,10 @@ function scientificConfidenceChipColor(item) {
   }
 }
 
+function tooltipText(item, column) {
+  return getDecisionTooltip(item, column)
+}
+
 function shortenDecisionNotes(value, maxLength = 96) {
   const text = String(value || '').trim()
   if (!text || text === 'Not Specified') return 'Not Specified'
@@ -443,7 +440,26 @@ function toggleExpanded(item) {
               >
                 <td v-for="col in columns" :key="col.key">
                   <template v-if="isBenchmarkStatusColumn(col)">
+                    <v-tooltip
+                      v-if="hasDecisionTooltip(col)"
+                      location="top"
+                      max-width="420"
+                    >
+                      <template #activator="{ props }">
+                        <span v-bind="props" class="tooltip-activator">
+                          <v-chip
+                            size="small"
+                            :color="benchmarkStatusChipColor(item)"
+                            variant="flat"
+                          >
+                            {{ getColumnValue(item, col) }}
+                          </v-chip>
+                        </span>
+                      </template>
+                      <div class="decision-tooltip">{{ tooltipText(item, col) }}</div>
+                    </v-tooltip>
                     <v-chip
+                      v-else
                       size="small"
                       :color="benchmarkStatusChipColor(item)"
                       variant="flat"
@@ -452,7 +468,26 @@ function toggleExpanded(item) {
                     </v-chip>
                   </template>
                   <template v-else-if="isBooleanChipColumn(col)">
+                    <v-tooltip
+                      v-if="hasDecisionTooltip(col)"
+                      location="top"
+                      max-width="420"
+                    >
+                      <template #activator="{ props }">
+                        <span v-bind="props" class="tooltip-activator">
+                          <v-chip
+                            size="small"
+                            :color="chipColorForBooleanLabel(getColumnValue(item, col))"
+                            :variant="chipVariantForBooleanLabel(getColumnValue(item, col))"
+                          >
+                            {{ getColumnValue(item, col) }}
+                          </v-chip>
+                        </span>
+                      </template>
+                      <div class="decision-tooltip">{{ tooltipText(item, col) }}</div>
+                    </v-tooltip>
                     <v-chip
+                      v-else
                       size="small"
                       :color="chipColorForBooleanLabel(getColumnValue(item, col))"
                       :variant="chipVariantForBooleanLabel(getColumnValue(item, col))"
@@ -461,7 +496,26 @@ function toggleExpanded(item) {
                     </v-chip>
                   </template>
                   <template v-else-if="isScientificConfidenceColumn(col)">
+                    <v-tooltip
+                      v-if="hasDecisionTooltip(col)"
+                      location="top"
+                      max-width="420"
+                    >
+                      <template #activator="{ props }">
+                        <span v-bind="props" class="tooltip-activator">
+                          <v-chip
+                            size="small"
+                            :color="scientificConfidenceChipColor(item)"
+                            variant="flat"
+                          >
+                            {{ getColumnValue(item, col) }}
+                          </v-chip>
+                        </span>
+                      </template>
+                      <div class="decision-tooltip">{{ tooltipText(item, col) }}</div>
+                    </v-tooltip>
                     <v-chip
+                      v-else
                       size="small"
                       :color="scientificConfidenceChipColor(item)"
                       variant="flat"
@@ -535,36 +589,135 @@ function toggleExpanded(item) {
                         />
                       </div>
                     </div>
-                    <div class="detail-grid">
-                      <div
-                        v-for="field in detailFields"
-                        :key="field.value"
-                        class="detail-card"
-                      >
-                        <div class="detail-card__label">{{ field.title }}</div>
-                        <div class="detail-card__value">
-                          <template v-if="isBooleanChipColumn(field)">
-                            <v-chip
-                              size="small"
-                              :color="chipColorForBooleanLabel(getColumnValue(item, field))"
-                              :variant="chipVariantForBooleanLabel(getColumnValue(item, field))"
-                            >
+                    <div class="detail-section">
+                      <div class="detail-section__title">Decision Signals</div>
+                      <div class="detail-grid">
+                        <div
+                          v-for="field in detailFields"
+                          :key="field.value"
+                          class="detail-card"
+                        >
+                          <div class="detail-card__label">{{ field.title }}</div>
+                          <div class="detail-card__value">
+                            <template v-if="isBenchmarkStatusColumn(field)">
+                              <v-tooltip
+                                v-if="hasDecisionTooltip(field)"
+                                location="top"
+                                max-width="420"
+                              >
+                                <template #activator="{ props }">
+                                  <span v-bind="props" class="tooltip-activator">
+                                    <v-chip
+                                      size="small"
+                                      :color="benchmarkStatusChipColor(item)"
+                                      variant="flat"
+                                    >
+                                      {{ getColumnValue(item, field) }}
+                                    </v-chip>
+                                  </span>
+                                </template>
+                                <div class="decision-tooltip">{{ tooltipText(item, field) }}</div>
+                              </v-tooltip>
+                              <v-chip
+                                v-else
+                                size="small"
+                                :color="benchmarkStatusChipColor(item)"
+                                variant="flat"
+                              >
+                                {{ getColumnValue(item, field) }}
+                              </v-chip>
+                            </template>
+                            <template v-else-if="isBooleanChipColumn(field)">
+                              <v-tooltip
+                                v-if="hasDecisionTooltip(field)"
+                                location="top"
+                                max-width="420"
+                              >
+                                <template #activator="{ props }">
+                                  <span v-bind="props" class="tooltip-activator">
+                                    <v-chip
+                                      size="small"
+                                      :color="chipColorForBooleanLabel(getColumnValue(item, field))"
+                                      :variant="chipVariantForBooleanLabel(getColumnValue(item, field))"
+                                    >
+                                      {{ getColumnValue(item, field) }}
+                                    </v-chip>
+                                  </span>
+                                </template>
+                                <div class="decision-tooltip">{{ tooltipText(item, field) }}</div>
+                              </v-tooltip>
+                              <v-chip
+                                v-else
+                                size="small"
+                                :color="chipColorForBooleanLabel(getColumnValue(item, field))"
+                                :variant="chipVariantForBooleanLabel(getColumnValue(item, field))"
+                              >
+                                {{ getColumnValue(item, field) }}
+                              </v-chip>
+                            </template>
+                            <template v-else-if="isScientificConfidenceColumn(field)">
+                              <v-tooltip
+                                v-if="hasDecisionTooltip(field)"
+                                location="top"
+                                max-width="420"
+                              >
+                                <template #activator="{ props }">
+                                  <span v-bind="props" class="tooltip-activator">
+                                    <v-chip
+                                      size="small"
+                                      :color="scientificConfidenceChipColor(item)"
+                                      variant="flat"
+                                    >
+                                      {{ getColumnValue(item, field) }}
+                                    </v-chip>
+                                  </span>
+                                </template>
+                                <div class="decision-tooltip">{{ tooltipText(item, field) }}</div>
+                              </v-tooltip>
+                              <v-chip
+                                v-else
+                                size="small"
+                                :color="scientificConfidenceChipColor(item)"
+                                variant="flat"
+                              >
+                                {{ getColumnValue(item, field) }}
+                              </v-chip>
+                            </template>
+                            <template v-else>
                               {{ getColumnValue(item, field) }}
-                            </v-chip>
-                          </template>
-                          <template v-else-if="isScientificConfidenceColumn(field)">
-                            <v-chip
-                              size="small"
-                              :color="scientificConfidenceChipColor(item)"
-                              variant="flat"
-                            >
-                              {{ getColumnValue(item, field) }}
-                            </v-chip>
-                          </template>
-                          <template v-else>
-                            {{ getColumnValue(item, field) }}
-                          </template>
+                            </template>
+                          </div>
                         </div>
+                      </div>
+                    </div>
+                    <div class="detail-section">
+                      <div class="detail-section__title">Pipeline Comparison</div>
+                      <div class="comparison-table-wrapper">
+                        <table class="comparison-table">
+                          <thead>
+                            <tr>
+                              <th>Layer</th>
+                              <th>Source</th>
+                              <th>Group</th>
+                              <th>TM Count</th>
+                              <th>Segments</th>
+                              <th>Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr
+                              v-for="row in item._pipelineComparisonRows"
+                              :key="`${row.layer}-${row.source}-${row.method}`"
+                            >
+                              <td>{{ row.layer }}</td>
+                              <td>{{ row.source }}</td>
+                              <td>{{ row.groupLabel || '—' }}</td>
+                              <td>{{ row.tmCount }}</td>
+                              <td>{{ row.segmentSummary }}</td>
+                              <td>{{ row.notes }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>
@@ -731,9 +884,19 @@ function toggleExpanded(item) {
   font-weight: 500;
 }
 
-.highlight-row {
-  background-color: rgba(255, 193, 7, 0.12);
+.tooltip-activator {
+  display: inline-flex;
 }
+
+.decision-tooltip {
+  white-space: normal;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+/* .highlight-row {
+  background-color: rgba(255, 193, 7, 0.12);
+} */
 
 .text-sm {
   font-size: 0.92rem;
@@ -757,6 +920,80 @@ function toggleExpanded(item) {
 
 .detail-cell {
   padding: 0 !important;
+}
+
+.detail-layout {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.detail-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.detail-section__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4f6378;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.85rem;
+}
+
+.detail-card {
+  border: 1px solid rgba(15, 76, 129, 0.12);
+  border-radius: 16px;
+  background: #fff;
+  padding: 0.9rem 1rem;
+  min-height: 108px;
+}
+
+.detail-card__label {
+  color: #6b7d91;
+  font-size: 0.85rem;
+  margin-bottom: 0.55rem;
+}
+
+.detail-card__value {
+  color: #314154;
+  font-weight: 500;
+}
+
+.comparison-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(15, 76, 129, 0.1);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 960px;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid rgba(15, 76, 129, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.comparison-table thead th {
+  background: #f4f8fc;
+  color: #4f6378;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .detail-layout {

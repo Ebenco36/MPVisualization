@@ -49,7 +49,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const protein_details_new = ref({
     data: [],
     loader_status: false,
-    error: []
+    error: [],
+    message: null
   })
 
   const record_lineage = ref({
@@ -205,25 +206,30 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function getExpertAnnotation(searchQuery) {
     protein_details_new.value.loader_status = true
-      await DashboardService.expertAnnotation(searchQuery)
-      .then((res) => {
-          if (res) {
-              let response = res?.data
-              protein_details_new.value.data = response.data
-          }
-          protein_details_new.value.loader_status = false
+    protein_details_new.value.error = null
+    protein_details_new.value.message = null
+
+    try {
+      const res = await DashboardService.expertAnnotation(searchQuery)
+      const response = res?.data || {}
+      protein_details_new.value.data = response.data ?? null
+      protein_details_new.value.message = response.message ?? null
+      return response
+    } catch (error) {
+      console.log(error)
+      protein_details_new.value.data = null
+      protein_details_new.value.error = error
+      protein_details_new.value.message = null
+      Swal.fire({
+        title: 'Error',
+        text: protein_details_new.value.error,
+        icon: 'error',
+        confirmButtonText: 'OK'
       })
-      .catch((error) => {
-          console.log(error)
-          protein_details_new.value.error = error
-          Swal.fire({
-              title: 'Error',
-              text: protein_details_new.value.error,
-              icon: 'error',
-              confirmButtonText: 'OK'
-          })
-          protein_details_new.value.loader_status = false
-      })
+      throw error
+    } finally {
+      protein_details_new.value.loader_status = false
+    }
   }
 
   async function getRecordLineage(searchQuery) {

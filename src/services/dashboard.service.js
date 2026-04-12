@@ -48,9 +48,11 @@ class DashboardService {
   }
 
   summaryStats(search_param, payload) {
+    const cacheBuster = `_ts=${Date.now()}`
+    const suffix = payload ? `${payload}&${cacheBuster}` : cacheBuster
     return AxiosCall({
       method: 'GET',
-      path: 'get-summary-statistics?' + search_param + "&" + payload
+      path: 'get-summary-statistics?' + search_param + '&' + suffix
     }, 'Bearer')
   }
 

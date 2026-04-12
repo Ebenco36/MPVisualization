@@ -4,6 +4,9 @@
       :label="'Single view for ' + searchType.toUpperCase() + ' with accession code: ' + searchQuery"
       title=""
     />
+    <div v-if="recordNotice" class="alert alert-info mt-0 mb-3" role="status">
+      {{ recordNotice }}
+    </div>
     <div v-if="viewerNotice" class="alert alert-warning mt-0 mb-3" role="alert">
         {{ viewerNotice }}
     </div>
@@ -599,7 +602,7 @@
                 </div>
                 <div v-if="groupComparisonRows.length" class="subsection-block subsection-block--flush">
                   <div class="definition-label">Broad Group Assignment</div>
-                  <div class="table-responsive mt-2">
+                  <div class="comparison-table-wrapper mt-2">
                     <table class="table table-sm comparison-table mb-0">
                       <thead>
                         <tr>
@@ -609,7 +612,7 @@
                       </thead>
                       <tbody>
                         <tr v-for="item in groupComparisonRows" :key="item.source">
-                          <td>{{ item.source }}</td>
+                          <td class="comparison-table__source">{{ item.source }}</td>
                           <td>{{ item.value }}</td>
                         </tr>
                       </tbody>
@@ -618,7 +621,7 @@
                 </div>
                 <div v-if="tmSegmentComparisonRows.length" class="subsection-block">
                   <div class="definition-label">TM Segment Counts</div>
-                  <div class="table-responsive mt-2">
+                  <div class="comparison-table-wrapper mt-2">
                     <table class="table table-sm comparison-table mb-0">
                       <thead>
                         <tr>
@@ -628,15 +631,15 @@
                       </thead>
                       <tbody>
                         <tr v-for="item in tmSegmentComparisonRows" :key="item.source">
-                          <td>{{ item.source }}</td>
+                          <td class="comparison-table__source">{{ item.source }}</td>
                           <td>{{ item.value }}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                  <!-- <div v-if="tmSegmentNote" class="comparison-note">
+                  <div v-if="tmSegmentNote" class="comparison-note">
                     {{ tmSegmentNote }}
-                  </div> -->
+                  </div>
                 </div>
               </section>
 
@@ -937,6 +940,7 @@ let stopStructureNotesRealtime = null
 const details = ref(null)
 const record = ref(null)
 const error = ref(null)
+const recordNotice = ref('')
 const viewerLoading = ref(true)
 const viewerNotice = ref('')
 const forceGenericViewer = ref(false)
@@ -2524,23 +2528,64 @@ function handleHashChange() {
   }
 }
 
+function setDetailsHash(code, type = searchType.value) {
+  const params = new URLSearchParams()
+  if (code) params.set('code', String(code).trim().toUpperCase())
+  if (type) params.set('type', String(type).trim().toLowerCase())
+  window.history.replaceState(null, '', `#/details-2?${params.toString()}`)
+}
+
+function applyRecordAccess(recordLike = {}, responseMessage = null) {
+  const access = recordLike?.record_access || {}
+  const requestedCode = String(
+    access.requested_pdb_code || searchQuery.value || ''
+  ).trim().toUpperCase()
+  const replacementCode = String(
+    access.replacement_pdb_code || access.resolved_pdb_code || ''
+  ).trim().toUpperCase()
+
+  if (access.status === 'resolved_to_replacement' && access.redirect_target_available && replacementCode) {
+    recordNotice.value =
+      (typeof responseMessage === 'string' && responseMessage.trim()) ||
+      `Entry ${requestedCode} has been replaced by ${replacementCode}. Showing the replacement record.`
+
+    if (replacementCode !== searchQuery.value?.trim().toUpperCase()) {
+      searchQuery.value = replacementCode
+      setDetailsHash(replacementCode)
+    }
+    return
+  }
+
+  if (access.status === 'replacement_target_missing' && replacementCode) {
+    recordNotice.value =
+      (typeof responseMessage === 'string' && responseMessage.trim()) ||
+      `Entry ${requestedCode} has been replaced by ${replacementCode}, but MetaMP does not have the replacement record loaded yet.`
+    return
+  }
+
+  recordNotice.value = ''
+}
+
 async function fetchRecord() {
   const query = searchQuery.value?.trim()
   if (!query || query.length < 3) {
     record.value = null
     details.value = null
+    recordNotice.value = ''
     return
   }
 
   try {
-    await dashboardStore?.getExpertAnnotation(query)
+    const response = await dashboardStore?.getExpertAnnotation(query)
     record.value = dashboardStore.protein_details_new.data ?? null
+    applyRecordAccess(record.value, response?.message)
     details.value = buildDetailsViewModel(record.value)
     error.value = null
   } catch (fetchError) {
     console.error('Error fetching expert annotation:', fetchError)
     record.value = null
     details.value = null
+    recordNotice.value = ''
     error.value = fetchError
   }
 }
@@ -2611,6 +2656,7 @@ async function syncDetailsPage() {
   if (!query || query.length < 3) {
     details.value = null
     record.value = null
+    recordNotice.value = ''
     viewerLoading.value = false
     viewerNotice.value = ''
     forceGenericViewer.value = false
@@ -2635,7 +2681,7 @@ async function syncDetailsPage() {
 }
 
 watch([searchType, searchQuery], () => {
-  if (!mountedReady.value) return
+  if (!mountedReady.value || syncingDetailsPage.value) return
   syncDetailsPage()
 })
 
@@ -3093,8 +3139,36 @@ onBeforeUnmount(() => {
   border: 1px solid #dbe5ef;
 }
 
-.comparison-table {
+.comparison-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #dbe5ef;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border: 0;
+}
+
+.comparison-table th,
+.comparison-table td {
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.comparison-table__source {
+  width: 34%;
+  min-width: 148px;
+  color: #17324d;
+  font-weight: 600;
 }
 
 .comparison-table th {
@@ -3140,6 +3214,13 @@ onBeforeUnmount(() => {
 
 .external-links {
   margin-top: 12px;
+}
+
+@media (max-width: 767px) {
+  .comparison-table__source {
+    width: 42%;
+    min-width: 132px;
+  }
 }
 
 .link-list {
