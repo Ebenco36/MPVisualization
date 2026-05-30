@@ -14,6 +14,13 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading: false,
     error: null
   })
+
+  function clearSessionState() {
+    localStorage.removeItem(globalFigs.token)
+    localStorage.removeItem(globalFigs.user)
+    auth.value.token = null
+    auth.value.user = null
+  }
   /* Setup token */
 
   async function loadUser() {
@@ -28,10 +35,11 @@ export const useAuthStore = defineStore('auth', () => {
         })
         .catch((error) => {
           console.error({ error })
+          clearSessionState()
           throw error
         })
     } else {
-      AuthService.logout()
+      clearSessionState()
     }
   }
 
@@ -50,7 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
 
 
   async function login(userData, options = {}) {
-    const { redirect = true } = options
+    const { redirect = true, redirectTo = null } = options
     auth.value.isLoading = true;
     /*
     setTimeout(() => {
@@ -75,7 +83,9 @@ export const useAuthStore = defineStore('auth', () => {
           auth.value.token = response?.data?.token
           auth.value.isLoading = false
           if (redirect) {
-            router.replace('/welcome')
+            const targetPath = redirectTo || auth.value.returnPath || '/welcome'
+            auth.value.returnPath = null
+            router.replace(targetPath)
           }
           return response?.data?.user
        })
@@ -103,7 +113,13 @@ export const useAuthStore = defineStore('auth', () => {
     sessionPromise = (async () => {
       try {
         if (localStorage.getItem(globalFigs.token)) {
-          return await loadUser()
+          try {
+            return await loadUser()
+          } catch (error) {
+            if (!allowDefaultLogin) {
+              throw error
+            }
+          }
         }
 
         if (allowDefaultLogin) {
@@ -161,10 +177,8 @@ export const useAuthStore = defineStore('auth', () => {
       .then(res => {
         let response = res?.data
         if(response.status) {
-          localStorage.removeItem(globalFigs.token);
-          localStorage.removeItem(globalFigs.user);
-          auth.value.user = null
-          auth.value.token = null
+          clearSessionState()
+          auth.value.returnPath = null
           router.replace('/login')
         }
       })

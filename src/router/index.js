@@ -17,6 +17,7 @@ router.beforeEach(async (to, from, next) => {
       await authData.ensureSession()
     } catch (error) {
       console.error(error)
+      authData.auth.returnPath = to.fullPath
       return next({ path: '/login' })
     }
   }
