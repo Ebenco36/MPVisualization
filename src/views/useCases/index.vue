@@ -668,16 +668,25 @@ onUnmounted(() => {
                   between two databases. Detecting and resolving these inconsistencies is critical
                   for preserving MetaMP’s integrity, performance, and trustworthiness—ultimately
                   enabling more informed decisions and smoother operations. For each database pair,
-                  discrepancies are summarized over time in a linked chart, and a detailed table of
+                  discrepancies are summarized over time in a line chart, and a detailed table of
                   the selected mismatches (with full metadata) is provided for review.
                 </p>
-                <div class="container content" ref="chart_width">
-                  <GraphView
-                    id="usecases"
-                    :summary="chart_obj"
-                    :show_loading="false"
-                    :use_card="true"
-                  />
+                <div class="discrepancy-figure-shell">
+                  <div class="discrepancy-figure-meta">
+                    <div class="discrepancy-figure-meta__title">Disagreement Trend</div>
+                    <div class="discrepancy-figure-meta__text">
+                      Drag across the chart to narrow the year range. Click a year marker to load the
+                      matching disagreement records in the linked table.
+                    </div>
+                  </div>
+                  <div class="discrepancy-chart-frame" ref="chart_width">
+                    <GraphView
+                      id="usecases"
+                      :summary="chart_obj"
+                      :show_loading="false"
+                      :use_card="true"
+                    />
+                  </div>
                 </div>
 
                 <div v-if="useCases === 'discrepancies'">
@@ -1137,6 +1146,34 @@ canvas#display-canvas {
 .queue-meta {
   color: #516072;
   font-size: 0.92rem;
+}
+.discrepancy-figure-shell {
+  padding: 0 1.5rem 1.5rem;
+}
+.discrepancy-figure-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+.discrepancy-figure-meta__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #213547;
+}
+.discrepancy-figure-meta__text {
+  font-size: 0.92rem;
+  color: #5f7080;
+  max-width: 720px;
+}
+.discrepancy-chart-frame {
+  padding: 1.25rem 1.25rem 0.75rem;
+  border: 1px solid rgba(15, 76, 129, 0.08);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: 0 10px 30px rgba(15, 76, 129, 0.04);
 }
 .queue-footer {
   display: flex;

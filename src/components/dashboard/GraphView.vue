@@ -30,6 +30,7 @@ const props = defineProps({
 
 const title = ref("")
 const chartRoot = ref(null)
+let refreshTimer = null
 const { summary, label, show_loading, use_card } = toRefs(props)
 
 const displayTitle = computed(() => {
@@ -130,12 +131,28 @@ setTimeout(() => {
     }
 
     title.value = normalizeChartTitle(getChartTitle(summary.value))
+    const spec = stripChartTitles(summary.value)
     await nextTick()
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+      refreshTimer = null
+    }
     chartRoot.value.replaceChildren()
-    await embed(chartRoot.value, stripChartTitles(summary.value), {
+    await embed(chartRoot.value, spec, {
       actions: false,
       renderer: 'svg'
     })
+
+    if (props.id === 'usecases') {
+      refreshTimer = setTimeout(async () => {
+        if (!chartRoot.value) return
+        chartRoot.value.replaceChildren()
+        await embed(chartRoot.value, spec, {
+          actions: false,
+          renderer: 'svg'
+        })
+      }, 1200)
+    }
   })
 }, 100)
 </script>
@@ -157,7 +174,7 @@ setTimeout(() => {
 .graph-view__chart {
   width: 100%;
   overflow: auto;
-  min-height: 280px;
+  min-height: 360px;
 }
 
 .graph-view__chart :deep(.vega-embed) {
@@ -170,14 +187,18 @@ setTimeout(() => {
 
 .graph-view__chart :deep(svg) {
   display: block;
+  width: 100%;
   max-width: 100%;
   height: auto !important;
+  margin: 0 auto;
 }
 
 .graph-view__chart :deep(canvas) {
   display: block;
+  width: 100%;
   max-width: 100%;
   height: auto !important;
+  margin: 0 auto;
 }
 
 .watermark {
