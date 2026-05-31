@@ -668,8 +668,8 @@ onUnmounted(() => {
                   between two databases. Detecting and resolving these inconsistencies is critical
                   for preserving MetaMP’s integrity, performance, and trustworthiness—ultimately
                   enabling more informed decisions and smoother operations. For each database pair,
-                  discrepancies are plotted over time in a line chart, and a detailed table of all
-                  mismatches (with full metadata) is provided for review.
+                  discrepancies are summarized over time in a linked chart, and a detailed table of
+                  the selected mismatches (with full metadata) is provided for review.
                 </p>
                 <div class="container content" ref="chart_width">
                   <GraphView

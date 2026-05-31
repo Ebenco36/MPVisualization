@@ -62,11 +62,35 @@ setTimeout(() => {
     }
 
     await nextTick()
-    await embed(chartRoot.value, clonedObject, { actions: true })
+    chartRoot.value.replaceChildren()
+    await embed(chartRoot.value, clonedObject, {
+      actions: false,
+      renderer: 'svg'
+    })
   })
 }, 100)
 </script>
 <style scoped>
+.card :deep(.vega-embed) {
+  width: 100%;
+}
+
+.card :deep(.vega-embed > div) {
+  width: 100%;
+}
+
+.card :deep(svg) {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+}
+
+.card :deep(canvas) {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+}
+
 .watermark {
   font-size: 4vw;
   color: rgba(0, 0, 0, 0.1);

@@ -131,7 +131,11 @@ setTimeout(() => {
 
     title.value = normalizeChartTitle(getChartTitle(summary.value))
     await nextTick()
-    await embed(chartRoot.value, stripChartTitles(summary.value), { actions: true })
+    chartRoot.value.replaceChildren()
+    await embed(chartRoot.value, stripChartTitles(summary.value), {
+      actions: false,
+      renderer: 'svg'
+    })
   })
 }, 100)
 </script>
@@ -154,6 +158,26 @@ setTimeout(() => {
   width: 100%;
   overflow: auto;
   min-height: 280px;
+}
+
+.graph-view__chart :deep(.vega-embed) {
+  width: 100%;
+}
+
+.graph-view__chart :deep(.vega-embed > div) {
+  width: 100%;
+}
+
+.graph-view__chart :deep(svg) {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+}
+
+.graph-view__chart :deep(canvas) {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
 }
 
 .watermark {
